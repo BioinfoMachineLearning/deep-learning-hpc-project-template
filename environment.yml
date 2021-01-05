@@ -1,0 +1,13 @@
+name: DLHPT
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - anaconda
+  - pip=20.2.4
+  - pytorch-lightning
+  - pip:
+      - -e .
+      - -r file:requirements.txt
+      - -r file:tests/requirements.txt

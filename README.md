@@ -16,7 +16,7 @@ The goal of this seed is to structure ML paper-code the same so that work can ea
 
 <div align="center">    
  
-# Your Project Name     
+# Your HPC Project Name     
 
 [![Paper](http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg)](https://www.nature.com/articles/nature14539)
 [![Conference](http://img.shields.io/badge/NeurIPS-2019-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)
@@ -26,7 +26,7 @@ The goal of this seed is to structure ML paper-code the same so that work can ea
 ARXIV   
 [![Paper](http://img.shields.io/badge/arxiv-math.co:1480.1111-B31B1B.svg)](https://www.nature.com/articles/nature14539)
 -->
-![CI testing](https://github.com/PyTorchLightning/deep-learning-project-template/workflows/CI%20testing/badge.svg?branch=master&event=push)
+![CI testing](https://github.com/amorehead/deep-learning-hpc-project-template/workflows/CI%20testing/badge.svg?branch=master&event=push)
 
 
 <!--  
@@ -38,43 +38,84 @@ Conference
 What it does   
 
 ## How to run   
-First, install dependencies   
+First, create a Conda environment for the project:
 ```bash
-# clone project   
-git clone https://github.com/YourGithubName/deep-learning-project-template
+# Clone project   
+git clone https://github.com/YourGithubName/deep-learning-hpc-project-template
 
-# install project   
-cd deep-learning-project-template 
-pip install -e .   
-pip install -r requirements.txt
+# Install project   
+cd deep-learning-hpc-project-template
+
+# Create Conda environment in this directory using provided 'environment.yml' file:
+conda env create --prefix ./venv -f environment.yml
+
+# (Optional) Create Conda environment in a particular directory using provided 'environment.yml' file:
+conda env create --prefix MY-VENV-DIR -f environment.yml
+
+# Activate the Conda environment described in 'environment.yml':
+conda activate ./venv
+
+# (Optional) Activate the Conda environment located in a particular directory:
+conda activate MY-VENV-DIR
+
+# (Optional) Deactivate the current Conda environment:
+conda deactivate
+
+# (Optional) To remove this long prefix in your shell prompt, modify the env_prompt setting in your .condarc file:
+conda config --set env_prompt '({name})'
+
+# (Optional - 1) Perform a full update on the Conda environment created using 'environment.yml':
+conda env update --prefix ./venv --file environment.yml --prune
+
+# (Optional - 2) Perform a full update on the Conda environment located in a particular directory:
+conda env update --prefix MY-VENV-DIR --file environment.yml --prune
+```
+
+Optionally, (re)install all project dependencies :
+```bash
+# (Optional - 1) Reinstall project pip dependencies in the Conda environment currently activated:
+pip3 install -e .
+
+# (Optional - 2) Reinstall all run time pip dependencies in the Conda environment currently activated:
+pip3 install -r requirements.txt
+
+# (Optional - 3) Reinstall all test time pip dependencies in the Conda environment currently activated:
+pip3 install -r tests/requirements.txt
  ```   
- Next, navigate to any file and run it.   
+
+Further optionally, authenticate with Weights and Biases (Wandb) for advanced logging:
+```bash
+# (Optional) Sign into a Wandb account for logging:
+wandb login
+ ```   
+
+ Then, navigate to any file and run it:
  ```bash
-# module folder
+# Module folder
 cd project
 
-# run module (example: mnist as your main contribution)   
+# Run module (example: mnist as your main contribution)   
 python lit_classifier_main.py    
 ```
 
 ## Imports
-This project is setup as a package which means you can now easily import any file into any other file like so:
+This project is set up as a package which means you can now easily import any file into any other file like so:
 ```python
 from project.datasets.mnist import mnist
 from project.lit_classifier_main import LitClassifier
 from pytorch_lightning import Trainer
 
-# model
+# Model
 model = LitClassifier()
 
-# data
+# Data
 train, val, test = mnist()
 
-# train
+# Train
 trainer = Trainer()
 trainer.fit(model, train, val)
 
-# test using the best model!
+# Test using the best model!
 trainer.test(test_dataloaders=test)
 ```
 
