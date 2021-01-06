@@ -1,0 +1,11 @@
+name: project
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - anaconda
+  - pip=20.2.4
+  - pip:
+      - -e .
+      - -r file:requirements.txt
+      - -r file:tests/requirements.txt

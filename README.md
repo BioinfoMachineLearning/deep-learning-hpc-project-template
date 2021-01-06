@@ -46,14 +46,20 @@ git clone https://github.com/YourGithubName/deep-learning-hpc-project-template
 # Install project   
 cd deep-learning-hpc-project-template
 
-# Load 'open-ce' module on HPC cluster (or local machine)
+# (If on HPC cluster) Load 'open-ce' module
 module load open-ce-0.1-0
 
-# Clone Conda environment into this directory using provided 'open-ce' environment:
-conda create --prefix ./venv --clone open-ce
+# (If on HPC cluster) Clone Conda environment into this directory using provided 'open-ce' environment:
+conda create --prefix ./venv --clone open-ce-0.1-0
 
-# (Optional) Create Conda environment in a particular directory using provided 'open-ce' environment:
-conda create --prefix MY_VENV_DIR --clone open-ce
+# (If on HPC cluster - Optional) Create Conda environment in a particular directory using provided 'open-ce' environment:
+conda create --prefix MY_VENV_DIR --clone open-ce-0.1-0
+
+# (Else, if on local machine) Set up Conda environment locally
+conda env create --prefix ./venv -f environment.yml
+
+# (Optional) Create Conda environment in a particular directory using local 'environment.yml' file:
+conda env create --prefix MY-VENV-DIR -f environment.yml
 
 # Activate Conda environment located in the current directory:
 conda activate ./venv
@@ -68,7 +74,7 @@ conda deactivate
 conda config --set env_prompt '({name})'
 ```
 
-Install all project dependencies:
+(If on HPC cluster) Install all project dependencies:
 ```bash
 # Install project pip dependencies in the Conda environment currently activated:
 pip3 install -e .
