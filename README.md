@@ -79,17 +79,14 @@ conda config --set env_prompt '({name})'
 # Install project pip dependencies in the Conda environment currently activated:
 pip3 install -e .
 
-# Install all run time pip dependencies in the Conda environment currently activated:
-pip3 install -r requirements.txt
-
 # Install all test time pip dependencies in the Conda environment currently activated:
 pip3 install -r tests/requirements.txt
  ```   
 
 Authenticate with Weights and Biases (Wandb) for advanced logging:
 ```bash
-# Sign into a Wandb account for logging:
-wandb login
+# Install Wandb as a pip dependency
+pip3 install wandb
  ```   
 
  Then, navigate to any file and run it:

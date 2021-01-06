@@ -10,7 +10,7 @@ setup(
     author_email='',
     # REPLACE WITH YOUR OWN GITHUB PROJECT LINK
     url='https://github.com/PyTorchLightning/pytorch-lightning-conference-seed',
-    install_requires=['pytorch-lightning'],
+    install_requires=[''],
     packages=find_packages(),
 )
 
