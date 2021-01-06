@@ -58,7 +58,7 @@ conda create --prefix MY_VENV_DIR --clone open-ce-0.1-0
 # (Else, if on local machine) Set up Conda environment locally
 conda env create --prefix ./venv -f environment.yml
 
-# (Optional) Create Conda environment in a particular directory using local 'environment.yml' file:
+# (Else, if on local machine - Optional) Create Conda environment in a particular directory using local 'environment.yml' file:
 conda env create --prefix MY-VENV-DIR -f environment.yml
 
 # Activate Conda environment located in the current directory:
