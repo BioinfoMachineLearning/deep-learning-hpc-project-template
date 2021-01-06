@@ -75,6 +75,7 @@ def cli_main():
     parser = ArgumentParser()
     parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
+    parser.add_argument('--early_stop_callback', type=bool, default=True)
     parser.add_argument('--num_dataloader_workers', type=int, default=1)
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitClassifier.add_model_specific_args(parser)
@@ -101,9 +102,9 @@ def cli_main():
     # ------------
     try:
         wandb.login()
-        wandb.restore(f'Adam-{args.batch_size}-{args.learning_rate}.pth',
+        wandb.restore(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth',
                       run_path=f'amorehead/DLHPT/RUN_ID')
-        model = LitClassifier.load_from_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
+        model = LitClassifier.load_from_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
         print('Resuming from checkpoint...')
     except CommError:
         print('Could not restore checkpoint. Skipping...')
@@ -112,7 +113,8 @@ def cli_main():
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
-    trainer.logger = WandbLogger(name=f'Adam-{args.batch_size}-{args.learning_rate}', project='DLHPT')
+    trainer.logger = WandbLogger(name=f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}', project='DLHPT')
+    trainer.early_stop_callback = args.early_stop_callback
     trainer.fit(model, train_loader, val_loader)
 
     # ------------
@@ -124,8 +126,8 @@ def cli_main():
     # ------------
     # finalizing
     # ------------
-    trainer.save_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
-    wandb.save(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
+    trainer.save_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
+    wandb.save(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
     wandb.finish()
 
 
