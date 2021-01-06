@@ -47,7 +47,7 @@ git clone https://github.com/YourGithubName/deep-learning-hpc-project-template
 cd deep-learning-hpc-project-template
 
 # Load 'open-ce' module on HPC cluster (or local machine)
-module load open-ce
+module load open-ce-0.1-0
 
 # Clone Conda environment into this directory using provided 'open-ce' environment:
 conda create --prefix ./venv --clone open-ce
