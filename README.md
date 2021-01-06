@@ -46,49 +46,43 @@ git clone https://github.com/YourGithubName/deep-learning-hpc-project-template
 # Install project   
 cd deep-learning-hpc-project-template
 
-# (Optional) Load Conda module on HPC cluster
-module load python/3.7.0-anaconda3-5.3.0
+# Load 'open-ce' module on HPC cluster (or local machine)
+module load open-ce
 
-# Create Conda environment in this directory using provided 'environment.yml' file:
-conda env create --prefix ./venv -f environment.yml
+# Clone Conda environment into this directory using provided 'open-ce' environment:
+conda create --prefix ./venv --clone open-ce
 
-# (Optional) Create Conda environment in a particular directory using provided 'environment.yml' file:
-conda env create --prefix MY-VENV-DIR -f environment.yml
+# (Optional) Create Conda environment in a particular directory using provided 'open-ce' environment:
+conda create --prefix MY_VENV_DIR --clone open-ce
 
-# Activate the Conda environment described in 'environment.yml':
+# Activate Conda environment located in the current directory:
 conda activate ./venv
 
-# (Optional) Activate the Conda environment located in a particular directory:
+# (Optional) Activate Conda environment located in another directory:
 conda activate MY-VENV-DIR
 
-# (Optional) Deactivate the current Conda environment:
+# (Optional) Deactivate the currently-activated Conda environment:
 conda deactivate
 
-# (Optional) To remove this long prefix in your shell prompt, modify the env_prompt setting in your .condarc file:
+# (Optional) To remove this long prefix in your shell prompt, modify the env_prompt setting in your .condarc file with:
 conda config --set env_prompt '({name})'
-
-# (Optional - 1) Perform a full update on the Conda environment created using 'environment.yml':
-conda env update --prefix ./venv --file environment.yml --prune
-
-# (Optional - 2) Perform a full update on the Conda environment located in a particular directory:
-conda env update --prefix MY-VENV-DIR --file environment.yml --prune
 ```
 
-Optionally, (re)install all project dependencies :
+Install all project dependencies:
 ```bash
-# (Optional - 1) Reinstall project pip dependencies in the Conda environment currently activated:
+# Install project pip dependencies in the Conda environment currently activated:
 pip3 install -e .
 
-# (Optional - 2) Reinstall all run time pip dependencies in the Conda environment currently activated:
+# Install all run time pip dependencies in the Conda environment currently activated:
 pip3 install -r requirements.txt
 
-# (Optional - 3) Reinstall all test time pip dependencies in the Conda environment currently activated:
+# Install all test time pip dependencies in the Conda environment currently activated:
 pip3 install -r tests/requirements.txt
  ```   
 
-Further optionally, authenticate with Weights and Biases (Wandb) for advanced logging:
+Authenticate with Weights and Biases (Wandb) for advanced logging:
 ```bash
-# (Optional) Sign into a Wandb account for logging:
+# Sign into a Wandb account for logging:
 wandb login
  ```   
 
@@ -98,14 +92,14 @@ wandb login
 cd project
 
 # Run module (example: mnist as your main contribution)   
-python lit_classifier_main.py    
+python lit_image_classifier.py    
 ```
 
 ## Imports
 This project is set up as a package which means you can now easily import any file into any other file like so:
 ```python
 from project.datasets.mnist import mnist
-from project.lit_classifier_main import LitClassifier
+from project.lit_image_classifier import LitClassifier
 from pytorch_lightning import Trainer
 
 # Model
