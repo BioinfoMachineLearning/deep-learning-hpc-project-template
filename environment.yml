@@ -1,4 +1,4 @@
-name: DLHPT
+name: project
 channels:
   - defaults
   - conda-forge
