@@ -46,6 +46,9 @@ git clone https://github.com/YourGithubName/deep-learning-hpc-project-template
 # Install project   
 cd deep-learning-hpc-project-template
 
+# (Optional) Load Conda module on HPC cluster
+module load python/3.7.0-anaconda3-5.3.0
+
 # Create Conda environment in this directory using provided 'environment.yml' file:
 conda env create --prefix ./venv -f environment.yml
 
