@@ -54,7 +54,7 @@ def cli_main():
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--early_stop_callback', type=bool, default=True)
-    parser.add_argument('--num_dataloader_workers', type=int, default=0)
+    parser.add_argument('--num_dataloader_workers', type=int, default=7)
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
@@ -88,7 +88,7 @@ def cli_main():
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    # set_start_method('forkserver')  # Address SEGFAULT crashes resulting from using distributed DataLoaders with 'fork'
+    set_start_method('forkserver')  # Address SEGFAULT crashes resulting from using distributed DataLoaders with 'fork'
     trainer.distributed_backend = 'horovod'
     trainer.max_epochs = 5
     trainer.num_dataloader_workers = args.num_dataloader_workers
