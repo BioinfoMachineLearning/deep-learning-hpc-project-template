@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
-from multiprocessing import set_start_method
 
 import pytorch_lightning as pl
 import torch
+import torch.multiprocessing as mp
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -96,7 +96,7 @@ def cli_main():
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    set_start_method('forkserver')  # Address SEGFAULT crashes resulting from using distributed DataLoaders with 'fork'
+    mp.set_start_method('forkserver')  # Address SEGFAULT crashes caused by using distributed DataLoaders with 'fork'
     trainer.distributed_backend = 'horovod'
     trainer.max_epochs = 5
     trainer.num_dataloader_workers = args.num_dataloader_workers
