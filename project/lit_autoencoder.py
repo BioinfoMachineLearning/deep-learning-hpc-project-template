@@ -80,6 +80,7 @@ def cli_main():
     # checkpoint
     # ------------
     try:
+        wandb.login()
         wandb.restore(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth',
                       run_path=f'amorehead/DLHPT/RUN_ID')
         model = LitAutoEncoder.load_from_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
