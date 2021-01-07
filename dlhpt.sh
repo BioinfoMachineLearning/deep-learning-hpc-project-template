@@ -20,4 +20,4 @@ eval "$(conda shell.bash hook)"
 conda activate "$PROJDIR"/venv
 
 # Run training script
-jsrun -bpacked:7 -r1 -g2 -a6 -c42 python3 "$PROJDIR"/project/lit_image_classifier.py --accelerator horovod --max_epochs 5 --num_dataloader_workers 16 --learning_rate 1e-2
+jsrun -bpacked:7 -r1 -g2 -a6 -c42 python3 "$PROJDIR"/project/lit_image_classifier.py --distributed_backend horovod --max_epochs 5 --num_dataloader_workers 16 --learning_rate 1e-2

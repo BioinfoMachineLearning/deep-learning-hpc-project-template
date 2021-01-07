@@ -50,7 +50,7 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
-    parser.add_argument('--batch_size', default=32, type=int)
+    parser.add_argument('--batch_size', default=128, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--early_stop_callback', type=bool, default=True)
     parser.add_argument('--num_dataloader_workers', type=int, default=1)
