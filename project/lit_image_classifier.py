@@ -122,7 +122,7 @@ def cli_main():
     # ------------
     # testing
     # ------------
-    result = trainer.test(test_dataloaders=test_loader)
+    result = trainer.test(model, test_dataloaders=test_loader)
     print(result)
 
     # ------------

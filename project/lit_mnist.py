@@ -108,7 +108,7 @@ def cli_main():
     # ------------
     # testing
     # ------------
-    trainer.test(test_dataloaders=test_loader)
+    trainer.test(model, test_dataloaders=test_loader)
 
     # ------------
     # finalizing
