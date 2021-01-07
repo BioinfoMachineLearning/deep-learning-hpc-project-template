@@ -1,15 +1,15 @@
-import os
 from argparse import ArgumentParser
 
 import torch
 import pytorch_lightning as pl
-from comet_ml import API
-from pytorch_lightning.loggers import CometLogger
+import wandb
+from pytorch_lightning.loggers import WandbLogger
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 
 from torchvision.datasets.mnist import MNIST
 from torchvision import transforms
+from wandb import CommError
 
 
 class LitClassifier(pl.LightningModule):
@@ -89,35 +89,18 @@ def cli_main():
     # checkpoint
     # ------------
     try:
-        api = API(api_key=os.environ.get('COMET_API_KEY'))
-        experiment = api.get(f'workspace-name/project-name/EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}',
-                             output_path="./", expand=True)
-
-        # Download an Experiment Model:
-        experiment.download_model(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}-Model',
-                                  output_path="./", expand=True)
-
-        model = LitClassifier.load_from_checkpoint(
-            f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}-Model.pth')
+        wandb.restore(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth',
+                      run_path=f'amorehead/DLHPT/RUN_ID')
+        model = LitClassifier.load_from_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
         print('Resuming from checkpoint...')
-    except FileNotFoundError:
+    except CommError:
         print('Could not restore checkpoint. Skipping...')
 
     # ------------
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
-
-    # The arguments made to CometLogger are passed on to the comet_ml.Experiment class
-    comet_logger = CometLogger(
-        api_key=os.environ.get('COMET_API_KEY'),
-        save_dir='.',  # Optional
-        project_name='dlhpt',  # Optional
-        experiment_name=f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}',  # Optional
-        log_hyperparams=True
-    )
-    trainer.logger = comet_logger
-
+    trainer.logger = WandbLogger(name=f'Adam-{args.batch_size}-{args.learning_rate}', project='DLHPT')
     trainer.early_stop_callback = args.early_stop_callback
     trainer.fit(model, train_loader, val_loader)
 
@@ -129,10 +112,9 @@ def cli_main():
     # ------------
     # finalizing
     # ------------
-    torch.save(model.state_dict(), f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}-Model.pth')
-    comet_logger.experiment.log_model(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}-Model',
-                                      f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}-Model.pth')
-    comet_logger.finalize()
+    trainer.save_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
+    wandb.save(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
+    wandb.finish()
 
 
 if __name__ == '__main__':
