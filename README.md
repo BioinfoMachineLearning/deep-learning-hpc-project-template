@@ -76,25 +76,28 @@ conda config --set env_prompt '({name})'
 
 (If on HPC cluster) Install all project dependencies:
 ```bash
-# Install project pip dependencies in the Conda environment currently activated:
+# Install project as a pip dependency in the Conda environment currently activated:
 pip3 install -e .
 
-# Install all test time pip dependencies in the Conda environment currently activated:
-pip3 install -r tests/requirements.txt
- ```   
+# Install external pip dependencies in the Conda environment currently activated:
+pip3 install -r requirements.txt
 
-Authenticate with Weights and Biases (Wandb) for advanced logging:
+# Install pip dependencies used for unit testing in the Conda environment currently activated:
+pip3 install -r tests/requirements.txt
+ ```
+
+Set up Comet.ml for advanced logging:
 ```bash
-# Install Wandb as a pip dependency
-pip3 install wandb
- ```   
+# Create a shell variable for your personal Comet.ml API key
+export COMET_API_KEY=MY_COMET_API_KEY
+ ```
 
  Then, navigate to any file and run it:
  ```bash
 # Module folder
 cd project
 
-# Run module (example: mnist as your main contribution)   
+# Run module (e.g. MNIST as your main contribution)   
 python lit_image_classifier.py    
 ```
 
