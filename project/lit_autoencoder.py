@@ -88,7 +88,7 @@ def cli_main():
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    set_start_method('forkserver')  # Address SEGFAULT crashes resulting from using distributed DataLoaders with 'fork'
+    set_start_method('spawn')  # Address SEGFAULT crashes resulting from using distributed DataLoaders with 'fork'
     trainer.distributed_backend = 'horovod'
     trainer.max_epochs = 5
     trainer.num_dataloader_workers = args.num_dataloader_workers
