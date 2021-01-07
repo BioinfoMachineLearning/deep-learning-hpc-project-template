@@ -108,8 +108,6 @@ def cli_main():
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    print('Sharing strategies available:', torch.multiprocessing.get_all_sharing_strategies())
-
     set_start_method('spawn')  # Address SEGFAULT crashes resulting from using distributed DataLoaders with 'fork'
     trainer.distributed_backend = 'horovod'
     trainer.max_epochs = 5
