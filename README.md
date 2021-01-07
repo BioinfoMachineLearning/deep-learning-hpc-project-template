@@ -76,17 +76,19 @@ conda config --set env_prompt '({name})'
 
 (If on HPC cluster) Install all project dependencies:
 ```bash
-# Install project pip dependencies in the Conda environment currently activated:
+# Install project as a pip dependency in the Conda environment currently activated:
 pip3 install -e .
 
-# Install all test time pip dependencies in the Conda environment currently activated:
+# Install external pip dependencies in the Conda environment currently activated:
+pip3 install -r requirements.txt
+
+# Install pip dependencies used for unit testing in the Conda environment currently activated:
 pip3 install -r tests/requirements.txt
  ```   
 
-Authenticate with Weights and Biases (Wandb) for advanced logging:
+Configure Weights and Biases (Wandb) to point to project directory for config details:
 ```bash
-# Install Wandb as a pip dependency
-pip3 install wandb
+export WANDB_CONFIG_DIR=.
  ```   
 
  Then, navigate to any file and run it:
@@ -95,7 +97,7 @@ pip3 install wandb
 cd project
 
 # Run module (example: mnist as your main contribution)   
-python lit_image_classifier.py    
+python lit_image_classifier.py
 ```
 
 ## Imports
