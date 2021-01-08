@@ -72,7 +72,7 @@ def cli_main():
     parser = ArgumentParser()
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
-    parser.add_argument('--num_dataloader_workers', type=int, default=4)
+    parser.add_argument('--num_dataloader_workers', type=int, default=0)
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
