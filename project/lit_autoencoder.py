@@ -57,6 +57,7 @@ def cli_main():
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
+    # Define HPC-specific properties in-file
     args.accelerator = 'horovod'
     args.gpus = 1
     args.max_epochs = 5
@@ -90,13 +91,6 @@ def cli_main():
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
-
-    trainer.accelerator = args.accelerator
-    trainer.gpus = args.gpus
-    trainer.max_epochs = args.max_epochs
-    trainer.num_dataloader_workers = args.num_dataloader_workers
-    trainer.learning_rate = args.learning_rate
-
     trainer.fit(model, train_loader, val_loader)
 
     # ------------
