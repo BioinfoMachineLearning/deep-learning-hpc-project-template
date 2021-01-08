@@ -20,4 +20,4 @@ eval "$(conda shell.bash hook)"
 conda activate "$PROJDIR"/venv
 
 # Run training script
-jsrun -bpacked:7 -g2 -a6 -c42 -r1 python3 "$PROJDIR"/project/lit_image_classifier.py
+horovodrun -np 2 python3 "$PROJDIR"/project/lit_image_classifier.py
