@@ -1,9 +1,13 @@
 name: project
 channels:
   - defaults
+  - anaconda
+  - alcf-theta
 dependencies:
   - python=3.8
   - anaconda
+  - cmake
+  - horovod
   - pip=20.2.4
   - pip:
       - -e .

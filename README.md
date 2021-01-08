@@ -70,6 +70,9 @@ conda activate MY-VENV-DIR
 # (Optional) Deactivate the currently-activated Conda environment:
 conda deactivate
 
+# (If on local machine - Optional) Perform a full update on the Conda environment described in 'environment.yml':
+conda env update -f environment.yml --prune
+
 # (Optional) To remove this long prefix in your shell prompt, modify the env_prompt setting in your .condarc file with:
 conda config --set env_prompt '({name})'
 ```
