@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 import torch.multiprocessing as mp
-from pytorch_lightning.callbacks import EarlyStopping
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -66,6 +65,10 @@ def cli_main():
     parser = LitClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
 
+    args.accelerator = 'horovod'
+    args.gpus = 1
+    args.max_epochs = 5
+
     # ------------
     # data
     # ------------
@@ -86,7 +89,7 @@ def cli_main():
     # checkpoint
     # ------------
     try:
-        model = LitClassifier.load_from_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
+        model = LitClassifier.load_from_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
         print('Resuming from checkpoint...')
     except:
         print('Could not restore checkpoint. Skipping...')
@@ -96,15 +99,11 @@ def cli_main():
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    trainer.accelerator_backend = 'horovod'
-    trainer.max_epochs = 5
+    trainer.accelerator = args.accelerator
+    trainer.gpus = args.gpus
+    trainer.max_epochs = args.max_epochs
     trainer.num_dataloader_workers = args.num_dataloader_workers
     trainer.learning_rate = args.learning_rate
-    trainer.callbacks = [EarlyStopping(monitor='val_loss',
-                                       min_delta=0.00,
-                                       patience=3,
-                                       verbose=False,
-                                       mode='max')]
 
     trainer.fit(model, train_loader, val_loader)
 
@@ -116,7 +115,7 @@ def cli_main():
     # ------------
     # finalizing
     # ------------
-    trainer.save_checkpoint(f'EarlyStopping-Adam-{args.batch_size}-{args.learning_rate}.pth')
+    trainer.save_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
 
 
 if __name__ == '__main__':
