@@ -58,7 +58,8 @@ def cli_main():
     args = parser.parse_args()
 
     # Define HPC-specific properties in-file
-    args.accelerator = 'horovod'
+    args.accelerator = 'ddp'
+    args.gpus = 2
     args.max_epochs = 5
 
     # ------------
@@ -105,5 +106,4 @@ def cli_main():
 
 
 if __name__ == '__main__':
-    mp.set_start_method('forkserver')  # Address SEGFAULT crashes caused by using distributed DataLoaders with 'fork'
     cli_main()
