@@ -66,6 +66,7 @@ def cli_main():
 
     # Define HPC-specific properties in-file
     args.accelerator = 'ddp'
+    args.gpus = 2
     args.max_epochs = 5
 
     # ------------
