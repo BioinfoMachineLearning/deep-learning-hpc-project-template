@@ -65,7 +65,7 @@ def cli_main():
     args = parser.parse_args()
 
     # Define HPC-specific properties in-file
-    args.accelerator = 'ddp2'
+    args.accelerator = 'ddp'
     args.max_epochs = 5
 
     # ------------
