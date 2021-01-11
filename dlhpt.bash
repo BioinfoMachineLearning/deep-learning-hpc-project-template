@@ -5,6 +5,7 @@
 #BSUB -W 0:10
 #BSUB -nnodes 1
 #BSUB -q batch
+#BSUB -alloc_flags "gpumps"
 #BSUB -J train_mnist_model_with_pl
 #BSUB -o /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 #BSUB -e /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
