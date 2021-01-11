@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import torch
-import torch.multiprocessing as mp
 import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
@@ -58,8 +57,8 @@ def cli_main():
     args = parser.parse_args()
 
     # Define HPC-specific properties in-file
-    args.accelerator = 'ddp'
-    args.gpus = 2
+    args.accelerator = 'ddp2'
+    args.gpus = 4
     args.max_epochs = 5
 
     # ------------
