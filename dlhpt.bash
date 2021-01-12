@@ -22,4 +22,4 @@ conda activate "$PROJDIR"/venv
 
 # Run training script
 cd "$PROJDIR" || exit
-jsrun -r1 -g6 -a6 -c42 -bpacked:7 python3 project/lit_image_classifier.py
+jsrun -r2 -g6 -a6 -c21 -bpacked:7 python3 project/lit_image_classifier.py
