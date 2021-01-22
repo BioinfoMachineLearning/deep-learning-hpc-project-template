@@ -20,8 +20,13 @@ eval "$(conda shell.bash hook)"
 # Remote Conda environment
 conda activate "$PROJDIR"/venv
 
-# Configure Weights and Biases (Wandb) to point to project directory for config details:
+# Configure Weights and Biases (Wandb) for local configuration storage and proxy access on compute nodes:
 export WANDB_CONFIG_DIR=.
+export all_proxy=socks://proxy.ccs.ornl.gov:3128/
+export ftp_proxy=ftp://proxy.ccs.ornl.gov:3128/
+export http_proxy=http://proxy.ccs.ornl.gov:3128/
+export https_proxy=https://proxy.ccs.ornl.gov:3128/
+export no_proxy='localhost,127.0.0.0/8,.ccs.ornl.gov,.ncrc.gov'
 
 # Run training script
 cd "$PROJDIR"/project || exit
