@@ -54,6 +54,8 @@ def cli_main():
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
+    parser.add_argument('--name', type=str, default='DLHPT WandB Test on MNIST', help="Run name")
+    parser.add_argument('--wandb', type=str, default='DLHPT', help="WandB project name")
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
