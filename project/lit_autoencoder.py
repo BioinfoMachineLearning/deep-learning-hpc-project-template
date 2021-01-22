@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from pytorch_lightning.loggers import WandbLogger
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
@@ -90,6 +91,10 @@ def cli_main():
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
+
+    logger = WandbLogger(name=args.name, project=args.wandb) if args.name else WandbLogger(project=f'{args.wandb}')
+    trainer.logger = logger
+
     trainer.fit(model, train_loader, val_loader)
 
     # ------------
