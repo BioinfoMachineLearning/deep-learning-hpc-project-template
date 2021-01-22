@@ -3,8 +3,9 @@
 ####################### BSUB Headers #########################
 #BSUB -P bip198
 #BSUB -W 0:10
-#BSUB -nnodes 1
+#BSUB -nnodes 2
 #BSUB -q batch
+#BSUB -alloc_flags "gpumps"
 #BSUB -J train_mnist_model_with_pl
 #BSUB -o /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 #BSUB -e /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
@@ -23,4 +24,5 @@ conda activate "$PROJDIR"/venv
 export WANDB_CONFIG_DIR=.
 
 # Run training script
-jsrun -bpacked:7 -r1 -g2 -a6 -c42 python3 "$PROJDIR"/project/lit_image_classifier.py --gpus 2 --max_epochs 5 --num_dataloader_workers 16 --learning_rate 1e-2
+cd "$PROJDIR" || exit
+jsrun -r1 -g6 -a6 -c21 -bpacked:7 python3 project/lit_image_classifier.py
