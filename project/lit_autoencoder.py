@@ -76,18 +76,17 @@ def cli_main():
     test_loader = DataLoader(mnist_test, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)
 
     # ------------
-    # model
-    # ------------
-    model = LitAutoEncoder()
-
-    # ------------
     # checkpoint
     # ------------
     try:
         model = LitAutoEncoder.load_from_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
         print('Resuming from checkpoint...')
     except:
+        # ------------
+        # model
+        # ------------
         print('Could not restore checkpoint. Skipping...')
+        model = LitAutoEncoder()
 
     # ------------
     # training

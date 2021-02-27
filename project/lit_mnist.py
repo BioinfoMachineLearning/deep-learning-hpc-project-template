@@ -84,18 +84,17 @@ def cli_main():
     test_loader = DataLoader(mnist_test, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)
 
     # ------------
-    # model
-    # ------------
-    model = LitClassifier(args.hidden_dim, args.learning_rate)
-
-    # ------------
     # checkpoint
     # ------------
     try:
         model = LitClassifier.load_from_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
         print('Resuming from checkpoint...')
     except:
+        # ------------
+        # model
+        # ------------
         print('Could not restore checkpoint. Skipping...')
+        model = LitClassifier(args.hidden_dim, args.learning_rate)
 
     # ------------
     # training
