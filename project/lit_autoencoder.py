@@ -1,9 +1,8 @@
-from argparse import ArgumentParser
-
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
-from pytorch_lightning.loggers import WandbLogger
+from argparse import ArgumentParser
+from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
@@ -13,8 +12,10 @@ from torchvision.datasets.mnist import MNIST
 
 class LitAutoEncoder(pl.LightningModule):
 
-    def __init__(self):
+    def __init__(self, save_dir: str = ''):
         super().__init__()
+        self.save_hyperparameters()
+
         self.encoder = nn.Sequential(
             nn.Linear(28 * 28, 64),
             nn.ReLU(),
@@ -37,11 +38,25 @@ class LitAutoEncoder(pl.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
+        self.log('train_mse_loss', loss, on_step=True, on_epoch=True, sync_dist=True)
         return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+        # scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
+        metric_to_track = 'train_mse_loss'
+        return {
+            'optimizer': optimizer,
+            # 'lr_scheduler': scheduler,
+            'monitor': metric_to_track
+        }
+
+    def configure_callbacks(self):
+        early_stop = EarlyStopping(monitor="train_mse_loss", mode="min")
+        checkpoint = ModelCheckpoint(monitor="train_mse_loss", save_top_k=3,
+                                     dirpath=self.hparams.save_dir,
+                                     filename='LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}')
+        return [early_stop, checkpoint]
 
 
 def cli_main():
@@ -54,8 +69,8 @@ def cli_main():
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
-    parser.add_argument('--name', type=str, default='DLHPT WandB Test on MNIST', help="Run name")
-    parser.add_argument('--wandb', type=str, default='DLHPT', help="WandB project name")
+    parser.add_argument('--name', type=str, default='DLHPT Neptune Test on MNIST', help="Run name")
+    parser.add_argument('--neptune', type=str, default='DLHPT', help="Neptune project name")
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
@@ -76,24 +91,16 @@ def cli_main():
     test_loader = DataLoader(mnist_test, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)
 
     # ------------
-    # checkpoint
+    # model
     # ------------
-    try:
-        model = LitAutoEncoder.load_from_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
-        print('Resuming from checkpoint...')
-    except:
-        # ------------
-        # model
-        # ------------
-        print('Could not restore checkpoint. Skipping...')
-        model = LitAutoEncoder()
+    model = LitAutoEncoder()
 
     # ------------
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    logger = WandbLogger(name=args.name, project=args.wandb) if args.name else WandbLogger(project=f'{args.wandb}')
+    logger = NeptuneLogger(name=args.name, project=args.neptune) if args.name else NeptuneLogger(project=f'{args.neptune}')
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
@@ -103,11 +110,6 @@ def cli_main():
     # ------------
     result = trainer.test(test_dataloaders=test_loader)
     print(result)
-
-    # ------------
-    # finalizing
-    # ------------
-    trainer.save_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
 
 
 if __name__ == '__main__':

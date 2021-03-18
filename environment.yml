@@ -2,9 +2,9 @@ name: project
 channels:
   - defaults
 dependencies:
-  - python=3.6
+  - python
   - anaconda
-  - pip=20.2.4
+  - pip
   - pip:
       - -e .
       - -r file:requirements.txt

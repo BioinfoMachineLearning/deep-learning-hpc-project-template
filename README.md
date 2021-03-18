@@ -96,12 +96,6 @@ pip3 install -r requirements.txt
 pip3 install -r tests/requirements.txt
  ```
 
-Configure Weights and Biases (Wandb) to point to project directory for config details:
-
-```bash
-export WANDB_CONFIG_DIR=.
- ```   
-
 Then, navigate to any file and run it:
 
  ```bash

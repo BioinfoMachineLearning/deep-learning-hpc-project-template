@@ -1,8 +1,7 @@
-from argparse import ArgumentParser
-
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.loggers import WandbLogger
+from argparse import ArgumentParser
+from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -12,6 +11,8 @@ from torchvision.datasets.mnist import MNIST
 class Backbone(torch.nn.Module):
     def __init__(self, hidden_dim=128):
         super().__init__()
+        self.save_hyperparameters()
+
         self.l1 = torch.nn.Linear(28 * 28, hidden_dim)
         self.l2 = torch.nn.Linear(hidden_dim, 10)
 
@@ -23,7 +24,7 @@ class Backbone(torch.nn.Module):
 
 
 class LitClassifier(pl.LightningModule):
-    def __init__(self, backbone, learning_rate=1e-3):
+    def __init__(self, backbone, learning_rate=1e-3, save_dir: str = ''):
         super().__init__()
         self.save_hyperparameters()
         self.backbone = backbone
@@ -37,24 +38,38 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('train_loss', loss, on_epoch=True)
+        self.log('train_cross_entropy', loss, on_step=True, on_epoch=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('valid_loss', loss, on_step=True)
+        self.log('valid_cross_entropy', loss, on_step=True, on_epoch=True, sync_dist=True)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('test_loss', loss)
+        self.log('test_cross_entropy', loss, on_step=True, on_epoch=True, sync_dist=True)
 
     def configure_optimizers(self):
         # self.hparams available because we called self.save_hyperparameters()
-        return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        # scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
+        metric_to_track = 'valid_cross_entropy'
+        return {
+            'optimizer': optimizer,
+            # 'lr_scheduler': scheduler,
+            'monitor': metric_to_track
+        }
+
+    def configure_callbacks(self):
+        early_stop = EarlyStopping(monitor="valid_cross_entropy", mode="min")
+        checkpoint = ModelCheckpoint(monitor="valid_cross_entropy", save_top_k=3,
+                                     dirpath=self.hparams.save_dir,
+                                     filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
+        return [early_stop, checkpoint]
 
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -73,8 +88,8 @@ def cli_main():
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
-    parser.add_argument('--name', type=str, default='DLHPT WandB Test on MNIST', help="Run name")
-    parser.add_argument('--wandb', type=str, default='DLHPT', help="WandB project name")
+    parser.add_argument('--name', type=str, default='DLHPT Neptune Test on MNIST', help="Run name")
+    parser.add_argument('--neptune', type=str, default='DLHPT', help="Neptune project name")
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
@@ -96,17 +111,9 @@ def cli_main():
     test_loader = DataLoader(mnist_test, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)
 
     # ------------
-    # checkpoint
+    # model
     # ------------
-    try:
-        model = LitClassifier.load_from_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
-        print('Resuming from checkpoint...')
-    except:
-        # ------------
-        # model
-        # ------------
-        print('Could not restore checkpoint. Skipping...')
-        model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.learning_rate)
+    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.learning_rate)
 
     # ------------
     # training
@@ -114,7 +121,7 @@ def cli_main():
     trainer = pl.Trainer.from_argparse_args(args)
 
     # Logging all args to wandb
-    logger = WandbLogger(name=args.name, project=args.wandb) if args.name else WandbLogger(project=f'{args.wandb}')
+    logger = NeptuneLogger(name=args.name, project=args.neptune) if args.name else NeptuneLogger(project=f'{args.neptune}')
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
@@ -124,11 +131,6 @@ def cli_main():
     # ------------
     result = trainer.test(test_dataloaders=test_loader)
     print(result)
-
-    # ------------
-    # finalizing
-    # ------------
-    trainer.save_checkpoint(f'Adam-{args.batch_size}-{args.learning_rate}.pth')
 
 
 if __name__ == '__main__':
