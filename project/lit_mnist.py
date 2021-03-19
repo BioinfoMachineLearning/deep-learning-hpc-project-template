@@ -1,6 +1,8 @@
+from argparse import ArgumentParser
+
 import pytorch_lightning as pl
 import torch
-from argparse import ArgumentParser
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -26,7 +28,7 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('train_cross_entropy', loss, on_step=True, on_epoch=True, sync_dist=True)
+        self.log('train_cross_entropy', loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -51,6 +53,9 @@ class LitClassifier(pl.LightningModule):
             'monitor': metric_to_track
         }
 
+    # ---------------------
+    # training setup
+    # ---------------------
     def configure_callbacks(self):
         early_stop = EarlyStopping(monitor="valid_cross_entropy", mode="min")
         checkpoint = ModelCheckpoint(monitor="valid_cross_entropy", save_top_k=3,
@@ -75,8 +80,10 @@ def cli_main():
     parser = ArgumentParser()
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
-    parser.add_argument('--name', type=str, default='DLHPT Neptune Test on MNIST', help="Run name")
-    parser.add_argument('--neptune', type=str, default='DLHPT', help="Neptune project name")
+    parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
+    parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
+    parser.add_argument('--project_name', type=str, default='DeepInteract', help="Neptune project name")
+    parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
@@ -100,14 +107,18 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitClassifier(args.hidden_dim, args.learning_rate)
+    model = LitClassifier(args.hidden_dim, args.learning_rate, args.num_epochs, args.save_dir)
 
     # ------------
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
+    trainer.min_epochs = args.num_epochs
 
-    logger = NeptuneLogger(name=args.name, project_name=args.neptune) if args.name else NeptuneLogger(project_name=f'{args.neptune}')
+    # Logging everything to Neptune
+    logger = NeptuneLogger(experiment_name=args.experiment_name, project_name=args.project_name) \
+        if args.experiment_name \
+        else NeptuneLogger(project_name=f'{args.project_name}')
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)

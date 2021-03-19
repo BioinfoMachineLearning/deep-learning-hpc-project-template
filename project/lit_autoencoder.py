@@ -1,7 +1,9 @@
+from argparse import ArgumentParser
+
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
-from argparse import ArgumentParser
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch import nn
 from torch.utils.data import DataLoader
@@ -38,9 +40,12 @@ class LitAutoEncoder(pl.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
-        self.log('train_mse_loss', loss, on_step=True, on_epoch=True, sync_dist=True)
+        self.log('train_mse_loss', loss)
         return loss
 
+    # ---------------------
+    # training setup
+    # ---------------------
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         # scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
@@ -69,8 +74,10 @@ def cli_main():
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
-    parser.add_argument('--name', type=str, default='DLHPT Neptune Test on MNIST', help="Run name")
-    parser.add_argument('--neptune', type=str, default='DLHPT', help="Neptune project name")
+    parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
+    parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
+    parser.add_argument('--project_name', type=str, default='DeepInteract', help="Neptune project name")
+    parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
@@ -93,14 +100,18 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitAutoEncoder()
+    model = LitAutoEncoder(args.save_dir)
 
     # ------------
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
+    trainer.min_epochs = args.num_epochs
 
-    logger = NeptuneLogger(name=args.name, project=args.neptune) if args.name else NeptuneLogger(project=f'{args.neptune}')
+    # Logging everything to Neptune
+    logger = NeptuneLogger(experiment_name=args.experiment_name, project_name=args.project_name) \
+        if args.experiment_name \
+        else NeptuneLogger(project_name=f'{args.project_name}')
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)

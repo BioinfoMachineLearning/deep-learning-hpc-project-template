@@ -1,9 +1,14 @@
 name: project
 channels:
   - defaults
+  - conda-forge
+  - pytorch
 dependencies:
   - python
   - anaconda
+  - pytorch
+  - torchvision
+  - torchaudio
   - pip
   - pip:
       - -e .
