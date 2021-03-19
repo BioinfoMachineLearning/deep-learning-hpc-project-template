@@ -13,8 +13,6 @@ from torchvision.datasets.mnist import MNIST
 class Backbone(torch.nn.Module):
     def __init__(self, hidden_dim=128):
         super().__init__()
-        self.save_hyperparameters()
-
         self.l1 = torch.nn.Linear(28 * 28, hidden_dim)
         self.l2 = torch.nn.Linear(hidden_dim, 10)
 
