@@ -20,6 +20,13 @@ eval "$(conda shell.bash hook)"
 # Remote Conda environment
 conda activate "$PROJDIR"/venv
 
+# Configure Neptune.ai logger for local configuration storage and proxy access on compute nodes
+export all_proxy=socks://proxy.ccs.ornl.gov:3128/
+export ftp_proxy=ftp://proxy.ccs.ornl.gov:3128/
+export http_proxy=http://proxy.ccs.ornl.gov:3128/
+export https_proxy=https://proxy.ccs.ornl.gov:3128/
+export no_proxy='localhost,127.0.0.0/8,.ccs.ornl.gov,.ncrc.gov'
+
 # Run training script
 cd "$PROJDIR"/project || exit
 jsrun -r1 -g6 -a6 -c21 -bpacked:7 python lit_image_classifier.py
