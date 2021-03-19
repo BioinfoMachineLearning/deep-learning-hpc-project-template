@@ -72,6 +72,7 @@ def cli_main():
     # ------------
     parser = ArgumentParser()
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
+    parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
@@ -99,7 +100,7 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitAutoEncoder(args.save_dir)
+    model = LitAutoEncoder(args.lr, args.save_dir)
 
     # ------------
     # training
@@ -111,7 +112,7 @@ def cli_main():
     logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
                            project_name=args.project_name,
                            close_after_fit=False,
-                           params={'max_epochs': args.num_epochs, 'lr': args.lr},
+                           params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
                            tags=['pytorch-lightning', 'autoencoder'],
                            upload_source_files=['*.py'])
     logger.experiment.log_artifact(args.save_dir)
