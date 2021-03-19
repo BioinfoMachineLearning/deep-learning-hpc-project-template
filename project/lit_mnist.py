@@ -124,7 +124,7 @@ def cli_main():
     #                        tags=['pytorch-lightning', 'mnist'],
     #                        upload_source_files=['*.py'])
     logger = TensorBoardLogger('tb_log', name=args.experiment_name)
-    # logger.experiment.log_artifact(args.save_dir)
+    # logger.experiment.log_artifact(args.save_dir)  # Neptune-specific
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
