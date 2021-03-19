@@ -14,7 +14,7 @@ from torchvision.datasets.mnist import MNIST
 
 class LitAutoEncoder(pl.LightningModule):
 
-    def __init__(self, save_dir: str = ''):
+    def __init__(self, lr: float = 1e-3, save_dir: str = ''):
         super().__init__()
         self.save_hyperparameters()
 
@@ -47,7 +47,7 @@ class LitAutoEncoder(pl.LightningModule):
     # training setup
     # ---------------------
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         # scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
         metric_to_track = 'train_mse_loss'
         return {
@@ -71,10 +71,10 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
-    parser.add_argument('--batch_size', default=256, type=int)
+    parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
+    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
-    parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
@@ -84,7 +84,6 @@ def cli_main():
     # Define HPC-specific properties in-file
     args.accelerator = 'ddp'
     args.gpus = 6
-    args.max_epochs = 5
 
     # ------------
     # data
@@ -109,9 +108,13 @@ def cli_main():
     trainer.min_epochs = args.num_epochs
 
     # Logging everything to Neptune
-    logger = NeptuneLogger(experiment_name=args.experiment_name, project_name=args.project_name) \
-        if args.experiment_name \
-        else NeptuneLogger(project_name=f'{args.project_name}')
+    logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
+                           project_name=args.project_name,
+                           close_after_fit=False,
+                           params={"max_epochs": args.num_epochs, "lr": args.lr},
+                           tags=["pytorch-lightning", "autoencoder"],
+                           upload_source_files=['*.py'])
+    logger.experiment.log_artifact(args.save_dir)
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
