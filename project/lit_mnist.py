@@ -117,12 +117,12 @@ def cli_main():
     trainer.min_epochs = args.num_epochs
 
     # Logging everything to Neptune
-    logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
-                           project_name=args.project_name,
-                           close_after_fit=False,
-                           params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
-                           tags=['pytorch-lightning', 'mnist'],
-                           upload_source_files=['*.py'])
+    # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
+    #                        project_name=args.project_name,
+    #                        close_after_fit=False,
+    #                        params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
+    #                        tags=['pytorch-lightning', 'mnist'],
+    #                        upload_source_files=['*.py'])
     logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     # logger.experiment.log_artifact(args.save_dir)
     trainer.logger = logger
