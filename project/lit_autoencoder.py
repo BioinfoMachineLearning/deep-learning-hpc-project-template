@@ -76,7 +76,7 @@ def cli_main():
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
-    parser.add_argument('--project_name', type=str, default='DeepInteract', help="Neptune project name")
+    parser.add_argument('--project_qualified_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
@@ -109,9 +109,9 @@ def cli_main():
     trainer.min_epochs = args.num_epochs
 
     # Logging everything to Neptune
-    logger = NeptuneLogger(experiment_name=args.experiment_name, project_name=args.project_name) \
+    logger = NeptuneLogger(experiment_name=args.experiment_name, project_qualified_name=args.project_qualified_name) \
         if args.experiment_name \
-        else NeptuneLogger(project_name=f'{args.project_name}')
+        else NeptuneLogger(project_qualified_name=f'{args.project_qualified_name}')
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
