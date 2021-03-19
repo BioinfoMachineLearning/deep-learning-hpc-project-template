@@ -4,7 +4,6 @@ import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
