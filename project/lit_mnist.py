@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -122,7 +123,8 @@ def cli_main():
                            params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
                            tags=['pytorch-lightning', 'mnist'],
                            upload_source_files=['*.py'])
-    logger.experiment.log_artifact(args.save_dir)
+    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
+    # logger.experiment.log_artifact(args.save_dir)
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)

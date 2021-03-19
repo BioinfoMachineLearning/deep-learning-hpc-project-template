@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch import nn
 from torch.utils.data import DataLoader
@@ -109,13 +110,14 @@ def cli_main():
     trainer.min_epochs = args.num_epochs
 
     # Logging everything to Neptune
-    logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
-                           project_name=args.project_name,
-                           close_after_fit=False,
-                           params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
-                           tags=['pytorch-lightning', 'autoencoder'],
-                           upload_source_files=['*.py'])
-    logger.experiment.log_artifact(args.save_dir)
+    # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
+    #                        project_name=args.project_name,
+    #                        close_after_fit=False,
+    #                        params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
+    #                        tags=['pytorch-lightning', 'autoencoder'],
+    #                        upload_source_files=['*.py'])
+    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
+    # logger.experiment.log_artifact(args.save_dir)
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
