@@ -111,8 +111,8 @@ def cli_main():
     logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
                            project_name=args.project_name,
                            close_after_fit=False,
-                           params={"max_epochs": args.num_epochs, "lr": args.lr},
-                           tags=["pytorch-lightning", "autoencoder"],
+                           params={'max_epochs': args.num_epochs, 'lr': args.lr},
+                           tags=['pytorch-lightning', 'autoencoder'],
                            upload_source_files=['*.py'])
     logger.experiment.log_artifact(args.save_dir)
     trainer.logger = logger
