@@ -68,8 +68,8 @@ class LitClassifier(pl.LightningModule):
         }
 
     def configure_callbacks(self):
-        early_stop = EarlyStopping(monitor="valid_cross_entropy", mode="min")
-        checkpoint = ModelCheckpoint(monitor="valid_cross_entropy", save_top_k=3,
+        early_stop = EarlyStopping(monitor='valid_cross_entropy', mode='min')
+        checkpoint = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3,
                                      dirpath=self.hparams.save_dir,
                                      filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
         return [early_stop, checkpoint]

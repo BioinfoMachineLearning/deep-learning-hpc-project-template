@@ -57,8 +57,8 @@ class LitAutoEncoder(pl.LightningModule):
         }
 
     def configure_callbacks(self):
-        early_stop = EarlyStopping(monitor="train_mse_loss", mode="min")
-        checkpoint = ModelCheckpoint(monitor="train_mse_loss", save_top_k=3,
+        early_stop = EarlyStopping(monitor='train_mse_loss', mode='min')
+        checkpoint = ModelCheckpoint(monitor='train_mse_loss', save_top_k=3,
                                      dirpath=self.hparams.save_dir,
                                      filename='LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}')
         return [early_stop, checkpoint]
