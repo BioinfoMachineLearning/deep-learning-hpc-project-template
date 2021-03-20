@@ -60,7 +60,7 @@ class LitClassifier(pl.LightningModule):
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--hidden_dim', type=int, default=128)
-        parser.add_argument('--learning_rate', type=float, default=0.0001)
+        parser.add_argument('--learning_rate', type=float, default=1e-3)
         return parser
 
 
@@ -71,18 +71,21 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
-    parser.add_argument('--accelerator', type=str, default='ddp', help="Backend to use for multi-GPU training")
-    parser.add_argument('--gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
+    parser = pl.Trainer.add_argparse_args(parser)
+    parser = LitClassifier.add_model_specific_args(parser)
+    parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
+    parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
-    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
-    parser = pl.Trainer.add_argparse_args(parser)
-    parser = LitClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
+
+    # Set HPC-specific parameter values
+    args.accelerator = args.multi_gpu_backend
+    args.gpus = args.num_gpus
 
     # ------------
     # data
@@ -98,7 +101,7 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitClassifier(args.hidden_dim, args.lr, args.num_epochs)
+    model = LitClassifier(args.hidden_dim, args.learning_rate, args.num_epochs)
 
     # ------------
     # training
@@ -107,7 +110,7 @@ def cli_main():
     trainer.min_epochs = args.num_epochs
 
     early_stop_callback = EarlyStopping(monitor='valid_cross_entropy', mode='min', min_delta=0.00, patience=3)
-    checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.hparams.save_dir,
+    checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.save_dir,
                                           filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
     trainer.callbacks = [early_stop_callback, checkpoint_callback]
 
@@ -115,7 +118,9 @@ def cli_main():
     # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
     #                        project_name=args.project_name,
     #                        close_after_fit=False,
-    #                        params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
+    #                        params={'max_epochs': args.num_epochs,
+    #                                'batch_size': args.batch_size,
+    #                                'lr': args.learning_rate},
     #                        tags=['pytorch-lightning', 'mnist'],
     #                        upload_source_files=['*.py'])
     # logger.experiment.log_artifact(args.save_dir)  # Neptune-specific

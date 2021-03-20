@@ -64,18 +64,22 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
-    parser.add_argument('--accelerator', type=str, default='ddp', help="Backend to use for multi-GPU training")
-    parser.add_argument('--gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
+    parser = pl.Trainer.add_argparse_args(parser)
+    parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
+    parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
-    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
+    parser.add_argument('--learning_rate', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
-    parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
+
+    # Set HPC-specific parameter values
+    args.accelerator = args.multi_gpu_backend
+    args.gpus = args.num_gpus
 
     # ------------
     # data
@@ -91,7 +95,7 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitAutoEncoder(args.lr)
+    model = LitAutoEncoder(args.learning_rate)
 
     # ------------
     # training
@@ -108,7 +112,9 @@ def cli_main():
     # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
     #                        project_name=args.project_name,
     #                        close_after_fit=False,
-    #                        params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
+    #                        params={'max_epochs': args.num_epochs,
+    #                                'batch_size': args.batch_size,
+    #                                'lr': args.learning_rate},
     #                        tags=['pytorch-lightning', 'autoencoder'],
     #                        upload_source_files=['*.py'])
     # logger.experiment.log_artifact(args.save_dir)  # Neptune-specific
