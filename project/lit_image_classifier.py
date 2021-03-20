@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -24,7 +24,7 @@ class Backbone(torch.nn.Module):
 
 
 class LitClassifier(pl.LightningModule):
-    def __init__(self, backbone, learning_rate=1e-3, save_dir: str = ''):
+    def __init__(self, backbone, learning_rate=1e-3):
         super().__init__()
         self.save_hyperparameters()
         self.backbone = backbone
@@ -67,13 +67,6 @@ class LitClassifier(pl.LightningModule):
             'monitor': metric_to_track
         }
 
-    def configure_callbacks(self):
-        early_stop = EarlyStopping(monitor='valid_cross_entropy', mode='min')
-        checkpoint = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3,
-                                     dirpath=self.hparams.save_dir,
-                                     filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
-        return [early_stop, checkpoint]
-
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
@@ -88,6 +81,8 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
+    parser.add_argument('--accelerator', type=str, default='ddp', help="Backend to use for multi-GPU training")
+    parser.add_argument('--gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
@@ -99,10 +94,6 @@ def cli_main():
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
-
-    # Define HPC-specific properties in-file
-    args.accelerator = 'ddp'
-    args.gpus, args.num_nodes = -1, 2
 
     # ------------
     # data
@@ -118,13 +109,18 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.lr, args.save_dir)
+    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.lr)
 
     # ------------
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
     trainer.min_epochs = args.num_epochs
+
+    early_stop_callback = EarlyStopping(monitor='valid_cross_entropy', mode='min', min_delta=0.00, patience=3)
+    checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.hparams.save_dir,
+                                          filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
+    trainer.callbacks = [early_stop_callback, checkpoint_callback]
 
     # Logging everything to Neptune
     # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
@@ -133,8 +129,10 @@ def cli_main():
     #                        params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
     #                        tags=['pytorch-lightning', 'image-classifier'],
     #                        upload_source_files=['*.py'])
-    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     # logger.experiment.log_artifact(args.save_dir)  # Neptune-specific
+
+    # Logging everything to TensorBoard instead of Neptune
+    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)

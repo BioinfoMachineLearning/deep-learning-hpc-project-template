@@ -14,7 +14,7 @@ from torchvision.datasets.mnist import MNIST
 
 class LitAutoEncoder(pl.LightningModule):
 
-    def __init__(self, lr: float = 1e-3, save_dir: str = ''):
+    def __init__(self, lr: float = 1e-3):
         super().__init__()
         self.save_hyperparameters()
 
@@ -56,13 +56,6 @@ class LitAutoEncoder(pl.LightningModule):
             'monitor': metric_to_track
         }
 
-    def configure_callbacks(self):
-        early_stop = EarlyStopping(monitor='train_mse_loss', mode='min')
-        checkpoint = ModelCheckpoint(monitor='train_mse_loss', save_top_k=3,
-                                     dirpath=self.hparams.save_dir,
-                                     filename='LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}')
-        return [early_stop, checkpoint]
-
 
 def cli_main():
     pl.seed_everything(1234)
@@ -71,6 +64,8 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
+    parser.add_argument('--accelerator', type=str, default='ddp', help="Backend to use for multi-GPU training")
+    parser.add_argument('--gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
@@ -81,10 +76,6 @@ def cli_main():
     parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
-
-    # Define HPC-specific properties in-file
-    args.accelerator = 'ddp'
-    args.gpus, args.num_nodes = -1, 2
 
     # ------------
     # data
@@ -100,13 +91,18 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitAutoEncoder(args.lr, args.save_dir)
+    model = LitAutoEncoder(args.lr)
 
     # ------------
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
-    trainer.min_epochs = args.num_epochs
+    trainer.num_epochs = args.num_epochs
+
+    early_stop_callback = EarlyStopping(monitor='train_mse_loss', mode='min', min_delta=0.00, patience=3)
+    checkpoint_callback = ModelCheckpoint(monitor='train_mse_loss', save_top_k=3, dirpath=args.save_dir,
+                                          filename='LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}')
+    trainer.callbacks = [early_stop_callback, checkpoint_callback]
 
     # Logging everything to Neptune
     # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
@@ -115,8 +111,10 @@ def cli_main():
     #                        params={'max_epochs': args.num_epochs, 'batch_size': args.batch_size, 'lr': args.lr},
     #                        tags=['pytorch-lightning', 'autoencoder'],
     #                        upload_source_files=['*.py'])
-    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     # logger.experiment.log_artifact(args.save_dir)  # Neptune-specific
+
+    # Logging everything to TensorBoard instead of Neptune
+    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     trainer.logger = logger
 
     trainer.fit(model, train_loader, val_loader)
