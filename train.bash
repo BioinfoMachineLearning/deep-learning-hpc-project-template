@@ -43,6 +43,6 @@ echo "Script finished at $(date)"
 ((seconds=diff))
 ((minutes=seconds/(60)))
 ((hours=minutes/(24)))
-echo "Script took $seconds seconds to execute"
-echo "Script took $minutes minutes to execute"
-echo "Script took $hours hours to execute"
+echo "Script took $seconds second(s) to execute"
+echo "Script took $minutes minute(s) to execute"
+echo "Script took $hours hour(s) to execute"
