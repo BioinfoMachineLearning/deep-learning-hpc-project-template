@@ -4,7 +4,6 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
-from pytorch_lightning.loggers import TensorBoardLogger
 from torch.nn import functional as F
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader, random_split
@@ -79,7 +78,7 @@ def cli_main():
     parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
-    parser.add_argument('--batch_size', default=256, type=int)
+    parser.add_argument('--batch_size', default=1024, type=int)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
@@ -145,8 +144,8 @@ def cli_main():
     # logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific
 
     # Logging everything to TensorBoard instead of Neptune
-    logger = TensorBoardLogger('tb_log', name=args.experiment_name)
-    trainer.logger = logger
+    # logger = TensorBoardLogger('tb_log', name=args.experiment_name)
+    # trainer.logger = logger
 
     # Train with the provided model and data module
     trainer.fit(model, train_loader, val_loader)
