@@ -29,11 +29,20 @@ export no_proxy='localhost,127.0.0.0/8,.ccs.ornl.gov,.ncrc.gov'
 
 # Run training script
 cd "$PROJDIR"/project || exit
-START=$(date +%s)  # Capture script start time in seconds since Unix epoch
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py
-END=$(date +%s)  # Capture script end time in seconds since Unix epoch
 
-# Calculate and output number of hours elapsed during script execution
+START=$(date +%s)  # Capture script start time in seconds since Unix epoch
+echo "Script started at $(date)"
+
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py  # Execute script
+
+END=$(date +%s)  # Capture script end time in seconds since Unix epoch
+echo "Script finished at $(date)"
+
+# Calculate and output time elapsed during script execution
 ((diff=END-START))
-((minutes=diff/(60)))
+((seconds=diff))
+((minutes=seconds/(60)))
+((hours=minutes/(24)))
+echo "Script took $seconds seconds to execute"
 echo "Script took $minutes minutes to execute"
+echo "Script took $hours hours to execute"
