@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
+from pytorch_lightning.loggers import NeptuneLogger
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
@@ -76,6 +77,7 @@ def cli_main():
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
+    parser.add_argument('--offline', type=bool, default=True, help="Whether to log locally or remotely")
     parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
     parser.add_argument('--ckpt_name', type=str, default=None, help="Filename of best checkpoint")
     args = parser.parse_args()
@@ -126,20 +128,21 @@ def cli_main():
         if not args.experiment_name \
         else args.experiment_name
 
-    # Logging everything to Neptune
-    # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
-    #                        project_name=args.project_name,
-    #                        close_after_fit=False,
-    #                        params={'max_epochs': args.num_epochs,
-    #                                'batch_size': args.batch_size,
-    #                                'lr': args.lr},
-    #                        tags=['pytorch-lightning', 'autoencoder'],
-    #                        upload_source_files=['*.py'])
-    # logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific
-
-    # Logging everything to TensorBoard instead of Neptune
+    # Logging everything to TensorBoard
     # logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     # trainer.logger = logger
+
+    # Logging everything to Neptune instead of TensorBoard
+    logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
+                           project_name=args.project_name,
+                           close_after_fit=False,
+                           params={'max_epochs': args.num_epochs,
+                                   'batch_size': args.batch_size,
+                                   'lr': args.lr},
+                           tags=['pytorch-lightning', 'autoencoder'],
+                           upload_source_files=['*.py'],
+                           offline_mode=args.offline)
+    logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific
 
     # Train with the provided model and data module
     trainer.fit(model, train_loader, val_loader)
