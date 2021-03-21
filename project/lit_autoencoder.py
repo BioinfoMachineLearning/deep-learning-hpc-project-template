@@ -77,8 +77,7 @@ def cli_main():
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
-    parser.add_argument('--ckpt_name', type=str, default="LitAutoEncoder-epoch=04-train_mse_loss=0.04.ckpt",
-                        help="Filename of best checkpoint")
+    parser.add_argument('--ckpt_name', type=str, default=None, help="Filename of best checkpoint")
     args = parser.parse_args()
 
     # Set HPC-specific parameter values
@@ -108,6 +107,9 @@ def cli_main():
     trainer.num_epochs = args.num_epochs
 
     # Resume from checkpoint if path to a valid one is provided
+    args.ckpt_name = args.ckpt_name \
+        if args.ckpt_name is not None \
+        else 'LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}.ckpt'
     checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
     trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
 
