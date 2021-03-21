@@ -87,6 +87,7 @@ def cli_main():
     parser = LitClassifier.add_model_specific_args(parser)
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
     parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
+    parser.add_argument('--profiler_method', type=int, default='simple', help="PyTorch Lightning profiler to use")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--hidden_dim', type=int, default=128)
@@ -100,6 +101,7 @@ def cli_main():
     # Set HPC-specific parameter values
     args.accelerator = args.multi_gpu_backend
     args.gpus = args.num_gpus
+    args.profiler = args.profiler_method
 
     # ------------
     # data
