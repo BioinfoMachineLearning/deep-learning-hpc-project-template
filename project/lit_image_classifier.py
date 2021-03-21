@@ -133,11 +133,12 @@ def cli_main():
     checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.ckpt_dir,
                                           filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
     lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
-    trainer.callbacks = [
-        early_stop_callback,
-        checkpoint_callback,
-        lr_callback
-    ]
+    trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
+
+    # Initialize logger
+    args.experiment_name = f'LitClassifierWithBackbone-e{args.num_epochs}-b{args.batch_size}' \
+        if not args.experiment_name \
+        else args.experiment_name
 
     # Logging everything to Neptune
     # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
@@ -154,6 +155,7 @@ def cli_main():
     logger = TensorBoardLogger('tb_log', name=args.experiment_name)
     trainer.logger = logger
 
+    # Train with the provided model and data module
     trainer.fit(model, train_loader, val_loader)
 
     # ------------
@@ -162,7 +164,7 @@ def cli_main():
     result = trainer.test(test_dataloaders=test_loader)
     print(result)
 
-    # neptune_logger.experiment.stop()  # Halt the current Neptune experiment
+    # logger.experiment.stop()  # Halt the current Neptune experiment
 
 
 if __name__ == '__main__':
