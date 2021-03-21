@@ -77,7 +77,7 @@ class LitClassifier(pl.LightningModule):
 
 
 def cli_main():
-    pl.seed_everything(1234)
+    pl.seed_everything(42)
 
     # ------------
     # args
@@ -95,6 +95,8 @@ def cli_main():
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--offline', type=bool, default=True, help="Whether to log locally or remotely")
+    parser.add_argument('--close_after_fit', type=bool, default=False, help="Whether to stop logger after calling fit")
+    parser.add_argument('--tb_log_dir', type=str, default='tb_log', help="Where to store TensorBoard log files")
     parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
     parser.add_argument('--ckpt_name', type=str, default=None, help="Filename of best checkpoint")
     args = parser.parse_args()
@@ -145,21 +147,22 @@ def cli_main():
         if not args.experiment_name \
         else args.experiment_name
 
-    # Logging everything to TensorBoard
-    # logger = TensorBoardLogger('tb_log', name=args.experiment_name)
-    # trainer.logger = logger
+    # Log everything to TensorBoard
+    # logger = TensorBoardLogger(save_dir=args.tb_log_dir, name=args.experiment_name)
 
-    # Logging everything to Neptune instead of TensorBoard
+    # Log everything to Neptune
     logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
                            project_name=args.project_name,
-                           close_after_fit=False,
+                           close_after_fit=args.close_after_fit,
                            params={'max_epochs': args.num_epochs,
                                    'batch_size': args.batch_size,
                                    'lr': args.lr},
                            tags=['pytorch-lightning', 'image-classifier'],
                            upload_source_files=['*.py'],
                            offline_mode=args.offline)
-    logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific
+
+    # Assign specified logger (e.g. Neptune) to Trainer instance
+    trainer.logger = logger
 
     # Train with the provided model and data module
     trainer.fit(model, train_loader, val_loader)
@@ -170,7 +173,11 @@ def cli_main():
     result = trainer.test(test_dataloaders=test_loader)
     print(result)
 
-    # logger.experiment.stop()  # Halt the current Neptune experiment
+    # ------------
+    # finalizing
+    # ------------
+    logger.experiment.log_artifact(args.ckpt_dir)
+    logger.experiment.stop()
 
 
 if __name__ == '__main__':
