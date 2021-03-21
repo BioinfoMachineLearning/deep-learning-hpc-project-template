@@ -26,7 +26,7 @@ class Backbone(torch.nn.Module):
 
 
 class LitClassifier(pl.LightningModule):
-    def __init__(self, backbone, num_epochs: int = 5, learning_rate=1e-3):
+    def __init__(self, backbone, num_epochs: int = 5, lr=1e-4):
         super().__init__()
         self.save_hyperparameters()
         self.backbone = backbone
@@ -60,7 +60,7 @@ class LitClassifier(pl.LightningModule):
     # ---------------------
     def configure_optimizers(self):
         # self.hparams available because we called self.save_hyperparameters()
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
         metric_to_track = 'valid_cross_entropy'
         return {
@@ -72,7 +72,7 @@ class LitClassifier(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--learning_rate', type=float, default=1e-3)
+        parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
         return parser
 
 
@@ -117,7 +117,7 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.num_epochs, args.learning_rate)
+    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.num_epochs, args.lr)
 
     # ------------
     # training
@@ -150,7 +150,7 @@ def cli_main():
     #                        close_after_fit=False,
     #                        params={'max_epochs': args.num_epochs,
     #                                'batch_size': args.batch_size,
-    #                                'lr': args.learning_rate},
+    #                                'lr': args.lr},
     #                        tags=['pytorch-lightning', 'image-classifier'],
     #                        upload_source_files=['*.py'])
     # logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific

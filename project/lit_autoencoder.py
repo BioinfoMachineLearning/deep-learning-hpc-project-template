@@ -16,7 +16,7 @@ from torchvision.datasets.mnist import MNIST
 
 class LitAutoEncoder(pl.LightningModule):
 
-    def __init__(self, num_epochs: int = 5, lr: float = 1e-3):
+    def __init__(self, num_epochs: int = 5, lr: float = 1e-4):
         super().__init__()
         self.save_hyperparameters()
 
@@ -72,7 +72,7 @@ def cli_main():
     parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
-    parser.add_argument('--learning_rate', type=float, default=1e-3, help="Learning rate")
+    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
     parser.add_argument('--hidden_dim', type=int, default=128)
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
@@ -100,7 +100,7 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitAutoEncoder(args.num_epochs, args.learning_rate)
+    model = LitAutoEncoder(args.num_epochs, args.lr)
 
     # ------------
     # training
@@ -133,7 +133,7 @@ def cli_main():
     #                        close_after_fit=False,
     #                        params={'max_epochs': args.num_epochs,
     #                                'batch_size': args.batch_size,
-    #                                'lr': args.learning_rate},
+    #                                'lr': args.lr},
     #                        tags=['pytorch-lightning', 'autoencoder'],
     #                        upload_source_files=['*.py'])
     # logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific
