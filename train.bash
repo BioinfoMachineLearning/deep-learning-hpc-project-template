@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ####################### BSUB Headers #########################
+#BSUB -J train_lit_image_classifier_model_with_pl
 #BSUB -P bip198
 #BSUB -W 0:10
 #BSUB -nnodes 2
-#BSUB -q batch
+#BSUB -q batch-hm
 #BSUB -alloc_flags "gpumps"
-#BSUB -J train_image_classifier_model_with_pl
 #BSUB -o /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 #BSUB -e /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 ###############################################################
