@@ -69,7 +69,7 @@ def cli_main():
     parser = pl.Trainer.add_argparse_args(parser)
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
     parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
-    parser.add_argument('--profiler_method', type=int, default='simple', help="PyTorch Lightning profiler to use")
+    parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
     parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--learning_rate', type=float, default=1e-3, help="Learning rate")
