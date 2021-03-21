@@ -78,16 +78,22 @@ def cli_main():
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
     parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
-    parser.add_argument('--num_epochs', type=int, default=5, help="Maxiumum number of epochs to run for training")
+    parser.add_argument('--num_epochs', type=int, default=5, help="Maximum number of epochs to run for training")
     parser.add_argument('--batch_size', type=int, default=4096, help='Number of samples included in each data batch')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
-    parser.add_argument('--offline', type=bool, default=True, help="Whether to log locally or remotely")
-    parser.add_argument('--close_after_fit', type=bool, default=False, help="Whether to stop logger after calling fit")
+    parser.add_argument('--offline', action='store_true', dest='offline', help="Whether to log locally or remotely")
+    parser.add_argument('--online', action='store_false', dest='offline', help="Whether to log locally or remotely")
+    parser.add_argument('--close_after_fit', action='store_true', dest='close_after_fit',
+                        help="Whether to stop logger after calling fit")
+    parser.add_argument('--open_after_fit', action='store_false', dest='close_after_fit',
+                        help="Whether to stop logger after calling fit")
     parser.add_argument('--tb_log_dir', type=str, default='tb_log', help="Where to store TensorBoard log files")
     parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
     parser.add_argument('--ckpt_name', type=str, default=None, help="Filename of best checkpoint")
+    parser.set_defaults(offline=True)  # Default to using offline logging mode
+    parser.set_defaults(close_after_fit=False)  # Default to keeping logger open after calling fit()
     args = parser.parse_args()
 
     # Set HPC-specific parameter values
