@@ -87,10 +87,10 @@ def cli_main():
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
     parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
-    parser.add_argument('--num_epochs', type=int, default=5, help="Number of epochs")
-    parser.add_argument('--batch_size', default=1024, type=int)
-    parser.add_argument('--hidden_dim', type=int, default=128)
-    parser.add_argument('--num_dataloader_workers', type=int, default=2)
+    parser.add_argument('--num_epochs', type=int, default=5, help="Maximum number of epochs to run for training")
+    parser.add_argument('--batch_size', default=4096, type=int, help='Number of samples included in each data batch')
+    parser.add_argument('--hidden_dim', type=int, default=128, help='Number of hidden units in each hidden layer')
+    parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
     parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
@@ -122,7 +122,7 @@ def cli_main():
     # training
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
-    trainer.min_epochs = args.num_epochs
+    trainer.max_epochs = args.num_epochs
 
     # Resume from checkpoint if path to a valid one is provided
     args.ckpt_name = args.ckpt_name \
