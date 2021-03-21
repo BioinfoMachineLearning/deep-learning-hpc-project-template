@@ -1,10 +1,12 @@
+import os
 from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.nn import functional as F
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets.mnist import MNIST
@@ -24,7 +26,7 @@ class Backbone(torch.nn.Module):
 
 
 class LitClassifier(pl.LightningModule):
-    def __init__(self, backbone, learning_rate=1e-3):
+    def __init__(self, backbone, num_epochs: int = 5, learning_rate=1e-3):
         super().__init__()
         self.save_hyperparameters()
         self.backbone = backbone
@@ -59,11 +61,11 @@ class LitClassifier(pl.LightningModule):
     def configure_optimizers(self):
         # self.hparams available because we called self.save_hyperparameters()
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
-        # scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
+        scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
         metric_to_track = 'valid_cross_entropy'
         return {
             'optimizer': optimizer,
-            # 'lr_scheduler': scheduler,
+            'lr_scheduler': scheduler,
             'monitor': metric_to_track
         }
 
@@ -91,7 +93,9 @@ def cli_main():
     parser.add_argument('--num_dataloader_workers', type=int, default=2)
     parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
     parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
-    parser.add_argument('--save_dir', type=str, default="models", help="Directory in which to save models")
+    parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
+    parser.add_argument('--ckpt_name', type=str, default="LitClassifier-epoch=26-valid_cross_entropy=0.06.ckpt",
+                        help="Filename of best checkpoint")
     args = parser.parse_args()
 
     # Set HPC-specific parameter values
@@ -112,7 +116,7 @@ def cli_main():
     # ------------
     # model
     # ------------
-    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.learning_rate)
+    model = LitClassifier(Backbone(hidden_dim=args.hidden_dim), args.num_epochs, args.learning_rate)
 
     # ------------
     # training
@@ -120,10 +124,20 @@ def cli_main():
     trainer = pl.Trainer.from_argparse_args(args)
     trainer.min_epochs = args.num_epochs
 
+    # Resume from checkpoint if path to a valid one is provided
+    checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
+    trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
+
+    # Create and use callbacks
     early_stop_callback = EarlyStopping(monitor='valid_cross_entropy', mode='min', min_delta=0.00, patience=3)
-    checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.save_dir,
+    checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.ckpt_dir,
                                           filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
-    trainer.callbacks = [early_stop_callback, checkpoint_callback]
+    lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
+    trainer.callbacks = [
+        early_stop_callback,
+        checkpoint_callback,
+        lr_callback
+    ]
 
     # Logging everything to Neptune
     # logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
@@ -134,7 +148,7 @@ def cli_main():
     #                                'lr': args.learning_rate},
     #                        tags=['pytorch-lightning', 'image-classifier'],
     #                        upload_source_files=['*.py'])
-    # logger.experiment.log_artifact(args.save_dir)  # Neptune-specific
+    # logger.experiment.log_artifact(args.ckpt_dir)  # Neptune-specific
 
     # Logging everything to TensorBoard instead of Neptune
     logger = TensorBoardLogger('tb_log', name=args.experiment_name)
@@ -147,6 +161,8 @@ def cli_main():
     # ------------
     result = trainer.test(test_dataloaders=test_loader)
     print(result)
+
+    # neptune_logger.experiment.stop()  # Halt the current Neptune experiment
 
 
 if __name__ == '__main__':

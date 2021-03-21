@@ -129,7 +129,6 @@ lightning_logs/
 MNIST
 .DS_Store
 
-# wandb
-wandb
-DLHPT
-settings
+# PyTorch Lightning
+checkpoints
+tb_log
