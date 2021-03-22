@@ -182,7 +182,7 @@ def cli_main():
     # ------------
     # finalizing
     # ------------
-    # logger.experiment.log_artifact(args.ckpt_dir)  # Not currently functional on Summit
+    logger.experiment.log_artifact(args.ckpt_dir)  # Not currently functional on Summit
 
 
 if __name__ == '__main__':
