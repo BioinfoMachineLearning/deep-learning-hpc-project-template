@@ -3,13 +3,13 @@ from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import torch
-import torch.nn.functional as F
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
+from torchmetrics import MeanSquaredError
 from torchvision import transforms
 from torchvision.datasets.mnist import MNIST
 
@@ -31,6 +31,8 @@ class LitAutoEncoder(pl.LightningModule):
             nn.Linear(64, 28 * 28)
         )
 
+        self.mse = MeanSquaredError()
+
     def forward(self, x):
         # in lightning, forward defines the prediction/inference actions
         embedding = self.encoder(x)
@@ -41,8 +43,8 @@ class LitAutoEncoder(pl.LightningModule):
         x = x.view(x.size(0), -1)
         z = self.encoder(x)
         x_hat = self.decoder(z)
-        loss = F.mse_loss(x_hat, x)
-        self.log('train_mse_loss', loss)
+        loss = self.mse(x_hat, x)
+        self.log('train_mse', loss)
         return loss
 
     # ---------------------
@@ -51,7 +53,7 @@ class LitAutoEncoder(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
-        metric_to_track = 'train_mse_loss'
+        metric_to_track = 'train_mse'
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
@@ -121,14 +123,14 @@ def cli_main():
     # Resume from checkpoint if path to a valid one is provided
     args.ckpt_name = args.ckpt_name \
         if args.ckpt_name is not None \
-        else 'LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}.ckpt'
+        else 'LitAutoEncoder-{epoch:02d}-{train_mse:.2f}.ckpt'
     checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
     trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
 
     # Create and use callbacks
-    early_stop_callback = EarlyStopping(monitor='train_mse_loss', mode='min', min_delta=0.00, patience=3)
-    checkpoint_callback = ModelCheckpoint(monitor='train_mse_loss', save_top_k=3, dirpath=args.ckpt_dir,
-                                          filename='LitAutoEncoder-{epoch:02d}-{train_mse_loss:.2f}')
+    early_stop_callback = EarlyStopping(monitor='train_mse', mode='min', min_delta=0.00, patience=3)
+    checkpoint_callback = ModelCheckpoint(monitor='train_mse', save_top_k=3, dirpath=args.ckpt_dir,
+                                          filename='LitAutoEncoder-{epoch:02d}-{train_mse:.2f}')
     lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
     trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
 

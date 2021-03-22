@@ -8,6 +8,7 @@ from pytorch_lightning.loggers import WandbLogger
 from torch.nn import functional as F
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader, random_split
+from torchmetrics import AUROC
 from torchvision import transforms
 from torchvision.datasets.mnist import MNIST
 
@@ -24,7 +25,7 @@ class Backbone(torch.nn.Module):
         x = torch.relu(self.l1(x))
         x = torch.relu(self.l2(x))
         x = self.l3(x)
-        x = torch.log_softmax(x, dim=1)
+        x = torch.softmax(x, dim=1)
         return x
 
 
@@ -34,6 +35,10 @@ class LitClassifier(pl.LightningModule):
         self.save_hyperparameters()
         self.backbone = backbone
 
+        self.train_auroc = AUROC(num_classes=10)
+        self.val_auroc = AUROC(num_classes=10)
+        self.test_auroc = AUROC(num_classes=10)
+
     def forward(self, x):
         # use forward for inference/predictions
         embedding = self.backbone(x)
@@ -42,21 +47,23 @@ class LitClassifier(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
-        loss = F.nll_loss(y_hat, y)
-        self.log('train_cross_entropy', loss)
+        loss = F.cross_entropy(y_hat, y)
+        self.log('train_auroc', self.train_auroc(y_hat, y))
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
-        loss = F.nll_loss(y_hat, y)
-        self.log('valid_cross_entropy', loss)
+        loss = F.cross_entropy(y_hat, y)
+        self.log('val_auroc', self.val_auroc(y_hat, y))
+        return loss
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
-        loss = F.nll_loss(y_hat, y)
-        self.log('test_cross_entropy', loss)
+        loss = F.cross_entropy(y_hat, y)
+        self.log('test_auroc', self.test_auroc(y_hat, y))
+        return loss
 
     # ---------------------
     # training setup
@@ -65,7 +72,7 @@ class LitClassifier(pl.LightningModule):
         # self.hparams available because we called self.save_hyperparameters()
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
-        metric_to_track = 'valid_cross_entropy'
+        metric_to_track = 'val_auroc'
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
@@ -141,14 +148,14 @@ def cli_main():
     # Resume from checkpoint if path to a valid one is provided
     args.ckpt_name = args.ckpt_name \
         if args.ckpt_name is not None \
-        else 'LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}.ckpt'
+        else 'LitClassifier-{epoch:02d}-{val_auroc:.2f}.ckpt'
     checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
     trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
 
     # Create and use callbacks
-    early_stop_callback = EarlyStopping(monitor='valid_cross_entropy', mode='min', min_delta=0.00, patience=3)
-    checkpoint_callback = ModelCheckpoint(monitor='valid_cross_entropy', save_top_k=3, dirpath=args.ckpt_dir,
-                                          filename='LitClassifier-{epoch:02d}-{valid_cross_entropy:.2f}')
+    early_stop_callback = EarlyStopping(monitor='val_auroc', mode='min', min_delta=0.00, patience=3)
+    checkpoint_callback = ModelCheckpoint(monitor='val_auroc', save_top_k=3, dirpath=args.ckpt_dir,
+                                          filename='LitClassifier-{epoch:02d}-{val_auroc:.2f}')
     lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
     trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
 
