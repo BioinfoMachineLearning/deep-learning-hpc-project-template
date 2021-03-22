@@ -16,12 +16,15 @@ class Backbone(torch.nn.Module):
     def __init__(self, hidden_dim=128):
         super().__init__()
         self.l1 = torch.nn.Linear(28 * 28, hidden_dim)
-        self.l2 = torch.nn.Linear(hidden_dim, 10)
+        self.l2 = torch.nn.Linear(hidden_dim, hidden_dim * 2)
+        self.l3 = torch.nn.Linear(hidden_dim * 2, 10)
 
     def forward(self, x):
         x = x.view(x.size(0), -1)
         x = torch.relu(self.l1(x))
         x = torch.relu(self.l2(x))
+        x = self.l3(x)
+        x = torch.log_softmax(x, dim=1)
         return x
 
 
@@ -39,21 +42,21 @@ class LitClassifier(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
-        loss = F.cross_entropy(y_hat, y)
+        loss = F.nll_loss(y_hat, y)
         self.log('train_cross_entropy', loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
-        loss = F.cross_entropy(y_hat, y)
-        self.log('valid_cross_entropy', loss, on_step=True, on_epoch=True, sync_dist=True)
+        loss = F.nll_loss(y_hat, y)
+        self.log('valid_cross_entropy', loss)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.backbone(x)
-        loss = F.cross_entropy(y_hat, y)
-        self.log('test_cross_entropy', loss, on_step=True, on_epoch=True, sync_dist=True)
+        loss = F.nll_loss(y_hat, y)
+        self.log('test_cross_entropy', loss)
 
     # ---------------------
     # training setup
@@ -88,7 +91,7 @@ def cli_main():
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
     parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
     parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
-    parser.add_argument('--num_epochs', type=int, default=5, help="Maximum number of epochs to run for training")
+    parser.add_argument('--num_epochs', type=int, default=20, help="Maximum number of epochs to run for training")
     parser.add_argument('--batch_size', default=4096, type=int, help='Number of samples included in each data batch')
     parser.add_argument('--hidden_dim', type=int, default=128, help='Number of hidden units in each hidden layer')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
