@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
-from pytorch_lightning.loggers import NeptuneLogger
+from pytorch_lightning.loggers import WandbLogger
 from torch.nn import functional as F
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader, random_split
@@ -81,8 +81,9 @@ def cli_main():
     parser.add_argument('--num_epochs', type=int, default=5, help="Maximum number of epochs to run for training")
     parser.add_argument('--batch_size', type=int, default=4096, help='Number of samples included in each data batch')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
-    parser.add_argument('--experiment_name', type=str, default=None, help="Neptune experiment name")
-    parser.add_argument('--project_name', type=str, default='amorehead/DLHPT', help="Neptune project name")
+    parser.add_argument('--experiment_name', type=str, default=None, help="Logger experiment name")
+    parser.add_argument('--project_name', type=str, default='DLHPT', help="Logger project name")
+    parser.add_argument('--entity', type=str, default='bml-lab', help="Logger entity (i.e. team) name")
     parser.add_argument('--offline', action='store_true', dest='offline', help="Whether to log locally or remotely")
     parser.add_argument('--online', action='store_false', dest='offline', help="Whether to log locally or remotely")
     parser.add_argument('--close_after_fit', action='store_true', dest='close_after_fit',
@@ -92,7 +93,7 @@ def cli_main():
     parser.add_argument('--tb_log_dir', type=str, default='tb_log', help="Where to store TensorBoard log files")
     parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
     parser.add_argument('--ckpt_name', type=str, default=None, help="Filename of best checkpoint")
-    parser.set_defaults(offline=True)  # Default to using offline logging mode
+    parser.set_defaults(offline=False)  # Default to using online logging mode
     parser.set_defaults(close_after_fit=False)  # Default to keeping logger open after calling fit()
     args = parser.parse_args()
 
@@ -142,21 +143,10 @@ def cli_main():
         if not args.experiment_name \
         else args.experiment_name
 
-    # Log everything to TensorBoard
-    # logger = TensorBoardLogger(save_dir=args.tb_log_dir, name=args.experiment_name)
+    # Log everything to Weights and Biases (WandB)
+    logger = WandbLogger(name=args.experiment_name, project=args.project_name, entity=args.entity, offline=args.offline)
 
-    # Log everything to Neptune
-    logger = NeptuneLogger(experiment_name=args.experiment_name if args.experiment_name else None,
-                           project_name=args.project_name,
-                           close_after_fit=args.close_after_fit,
-                           params={'max_epochs': args.num_epochs,
-                                   'batch_size': args.batch_size,
-                                   'lr': args.lr},
-                           tags=['pytorch-lightning', 'mnist'],
-                           upload_source_files=['*.py'],
-                           offline_mode=args.offline)
-
-    # Assign specified logger (e.g. Neptune) to Trainer instance
+    # Assign specified logger (e.g. WandB) to Trainer instance
     trainer.logger = logger
 
     # Train with the provided model and data module

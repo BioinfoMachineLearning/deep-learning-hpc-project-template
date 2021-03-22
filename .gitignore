@@ -129,6 +129,15 @@ lightning_logs/
 MNIST
 .DS_Store
 
-# PyTorch Lightning
-checkpoints
+# WandB
+wandb
+DeepInteract
+
+# Neptune
+project/DeepInteract
+
+# TensorBoard
 tb_log
+
+# Checkpoints
+checkpoints
