@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import torch
+import wandb
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 from torch import nn
@@ -47,6 +48,9 @@ class LitAutoEncoder(pl.LightningModule):
         self.log('train_mse', loss)
         return loss
 
+    def training_epoch_end(self, outputs):
+        self.mse.reset()
+
     # ---------------------
     # training setup
     # ---------------------
@@ -69,26 +73,26 @@ def cli_main():
     # ------------
     parser = ArgumentParser()
     parser = pl.Trainer.add_argparse_args(parser)
-    parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help="Backend to use for multi-GPU training")
-    parser.add_argument('--num_gpus', type=int, default=-1, help="Number of GPUs to use (e.g. -1 = all available GPUs)")
-    parser.add_argument('--profiler_method', type=str, default='simple', help="PyTorch Lightning profiler to use")
-    parser.add_argument('--num_epochs', type=int, default=20, help="Maximum number of epochs to run for training")
+    parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help='Backend to use for multi-GPU training')
+    parser.add_argument('--num_gpus', type=int, default=-1, help='Number of GPUs to use (e.g. -1 = all available GPUs)')
+    parser.add_argument('--profiler_method', type=str, default='simple', help='PyTorch Lightning profiler to use')
+    parser.add_argument('--num_epochs', type=int, default=20, help='Maximum number of epochs to run for training')
     parser.add_argument('--batch_size', default=4096, type=int, help='Number of samples included in each data batch')
-    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
+    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
     parser.add_argument('--hidden_dim', type=int, default=128, help='Number of hidden units in each hidden layer')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
-    parser.add_argument('--experiment_name', type=str, default=None, help="Logger experiment name")
-    parser.add_argument('--project_name', type=str, default='DLHPT', help="Logger project name")
-    parser.add_argument('--entity', type=str, default='bml-lab', help="Logger entity (i.e. team) name")
-    parser.add_argument('--offline', action='store_true', dest='offline', help="Whether to log locally or remotely")
-    parser.add_argument('--online', action='store_false', dest='offline', help="Whether to log locally or remotely")
+    parser.add_argument('--experiment_name', type=str, default=None, help='Logger experiment name')
+    parser.add_argument('--project_name', type=str, default='DLHPT', help='Logger project name')
+    parser.add_argument('--entity', type=str, default='bml-lab', help='Logger entity (i.e. team) name')
+    parser.add_argument('--offline', action='store_true', dest='offline', help='Whether to log locally or remotely')
+    parser.add_argument('--online', action='store_false', dest='offline', help='Whether to log locally or remotely')
     parser.add_argument('--close_after_fit', action='store_true', dest='close_after_fit',
-                        help="Whether to stop logger after calling fit")
+                        help='Whether to stop logger after calling fit')
     parser.add_argument('--open_after_fit', action='store_false', dest='close_after_fit',
-                        help="Whether to stop logger after calling fit")
-    parser.add_argument('--tb_log_dir', type=str, default='tb_log', help="Where to store TensorBoard log files")
-    parser.add_argument('--ckpt_dir', type=str, default="checkpoints", help="Directory in which to save checkpoints")
-    parser.add_argument('--ckpt_name', type=str, default=None, help="Filename of best checkpoint")
+                        help='Whether to stop logger after calling fit')
+    parser.add_argument('--tb_log_dir', type=str, default='tb_log', help='Where to store TensorBoard log files')
+    parser.add_argument('--ckpt_dir', type=str, default='checkpoints', help='Directory in which to save checkpoints')
+    parser.add_argument('--ckpt_name', type=str, default=None, help='Filename of best checkpoint')
     parser.set_defaults(offline=False)  # Default to using online logging mode
     parser.set_defaults(close_after_fit=False)  # Default to keeping logger open after calling fit()
     args = parser.parse_args()
@@ -114,25 +118,8 @@ def cli_main():
     # ------------
     model = LitAutoEncoder(args.num_epochs, args.lr)
 
-    # ------------
-    # training
-    # ------------
     trainer = pl.Trainer.from_argparse_args(args)
     trainer.max_epochs = args.num_epochs
-
-    # Resume from checkpoint if path to a valid one is provided
-    args.ckpt_name = args.ckpt_name \
-        if args.ckpt_name is not None \
-        else 'LitAutoEncoder-{epoch:02d}-{train_mse:.2f}.ckpt'
-    checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
-    trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
-
-    # Create and use callbacks
-    early_stop_callback = EarlyStopping(monitor='train_mse', mode='min', min_delta=0.00, patience=3)
-    checkpoint_callback = ModelCheckpoint(monitor='train_mse', save_top_k=3, dirpath=args.ckpt_dir,
-                                          filename='LitAutoEncoder-{epoch:02d}-{train_mse:.2f}')
-    lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
-    trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
 
     # Initialize logger
     args.experiment_name = f'LitAutoEncoder-e{args.num_epochs}-b{args.batch_size}' \
@@ -140,10 +127,31 @@ def cli_main():
         else args.experiment_name
 
     # Log everything to Weights and Biases (WandB)
-    logger = WandbLogger(name=args.experiment_name, project=args.project_name, entity=args.entity, offline=args.offline)
+    logger = WandbLogger(name=args.experiment_name, project=args.project_name,
+                         entity=args.entity, offline=args.offline, log_model=True)
 
     # Assign specified logger (e.g. WandB) to Trainer instance
     trainer.logger = logger
+
+    # ------------
+    # checkpoint
+    # ------------
+    # Resume from checkpoint if path to a valid one is provided
+    args.ckpt_name = args.ckpt_name \
+        if args.ckpt_name is not None \
+        else 'LitAutoEncoder-{epoch:02d}-{train_mse:.2f}.ckpt'
+    checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
+    trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
+
+    # ------------
+    # training
+    # ------------
+    # Create and use callbacks
+    early_stop_callback = EarlyStopping(monitor='train_mse', mode='min', min_delta=0.00, patience=3)
+    checkpoint_callback = ModelCheckpoint(monitor='train_mse', save_top_k=3, dirpath=args.ckpt_dir,
+                                          filename='LitAutoEncoder-{epoch:02d}-{train_mse:.2f}')
+    lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
+    trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
 
     # Train with the provided model and data module
     trainer.fit(model, train_loader, val_loader)
@@ -157,7 +165,7 @@ def cli_main():
     # ------------
     # finalizing
     # ------------
-    logger.experiment.log_artifact(args.ckpt_dir)
+    wandb.save(checkpoint_callback.best_model_path)
 
 
 if __name__ == '__main__':
