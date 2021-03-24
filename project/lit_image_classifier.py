@@ -159,7 +159,7 @@ def cli_main():
 
     # Log everything to Weights and Biases (WandB)
     logger = WandbLogger(name=args.experiment_name, project=args.project_name,
-                         entity=args.entity, offline=args.offline, log_model=True)
+                         entity=args.entity, offline=args.offline)
 
     # Assign specified logger (e.g. WandB) to Trainer instance
     trainer.logger = logger
