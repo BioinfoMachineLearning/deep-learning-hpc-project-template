@@ -104,6 +104,7 @@ def cli_main():
     # ------------
     parser = ArgumentParser()
     parser = pl.Trainer.add_argparse_args(parser)
+    parser = LitClassifier.add_model_specific_args(parser)
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help='Backend to use for multi-GPU training')
     parser.add_argument('--num_gpus', type=int, default=-1, help='Number of GPUs to use (e.g. -1 = all available GPUs)')
     parser.add_argument('--profiler_method', type=str, default='simple', help='PyTorch Lightning profiler to use')
