@@ -13,6 +13,10 @@
 
 # Remote project path
 export PROJDIR=$MEMBERWORK/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template
+export DGLBACKEND=pytorch # Required to override default ~/.dgl config directory which is read-only
+
+# Configure OMP for PyTorch
+export OMP_PLACES=threads
 
 # Configure Conda for BSUB script environment
 eval "$(conda shell.bash hook)"
@@ -20,7 +24,7 @@ eval "$(conda shell.bash hook)"
 # Remote Conda environment
 conda activate "$PROJDIR"/venv
 
-# Configure Neptune.ai logger for local configuration storage and proxy access on compute nodes
+# Configure WandB logger for local configuration storage and proxy access on compute nodes
 export WANDB_CONFIG_DIR=/gpfs/alpine/scratch/acmwhb/bip198/  # For local reading and writing of WandB files
 export WANDB_CACHE_DIR=/gpfs/alpine/scratch/acmwhb/bip198/  # For logging checkpoints as artifacts
 export all_proxy=socks://proxy.ccs.ornl.gov:3128/
@@ -35,7 +39,8 @@ cd "$PROJDIR"/project || exit
 START=$(date +%s)  # Capture script start time in seconds since Unix epoch
 echo "Script started at $(date)"
 
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py  # Execute script
+# Execute script
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_epochs 25 --batch_size 8192 --hidden_dim 128 num_dataloader_workers 28
 
 END=$(date +%s)  # Capture script end time in seconds since Unix epoch
 echo "Script finished at $(date)"
