@@ -5,7 +5,7 @@
 #BSUB -P bip198
 #BSUB -W 0:10
 #BSUB -nnodes 2
-#BSUB -q batch-hm
+#BSUB -q batch
 #BSUB -alloc_flags "gpumps NVME"
 #BSUB -o /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 #BSUB -e /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
