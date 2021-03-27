@@ -6,7 +6,7 @@
 #BSUB -W 0:10
 #BSUB -nnodes 2
 #BSUB -q batch
-#BSUB -alloc_flags "gpumps"
+#BSUB -alloc_flags "gpumps NVME"
 #BSUB -o /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 #BSUB -e /gpfs/alpine/scratch/acmwhb/bip198/Repositories/Personal_Repositories/deep-learning-hpc-project-template/job%J.out
 ###############################################################
@@ -42,7 +42,7 @@ START=$(date +%s) # Capture script start time in seconds since Unix epoch
 echo "Script started at $(date)"
 
 # Execute script
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28 --tb_log_dir /mnt/bb/$USER/tb_log --ckpt_dir /mnt/bb/$USER/checkpoints
 
 END=$(date +%s) # Capture script end time in seconds since Unix epoch
 echo "Script finished at $(date)"
@@ -55,3 +55,8 @@ echo "Script finished at $(date)"
 echo "Script took $seconds second(s) to execute"
 echo "Script took $minutes minute(s) to execute"
 echo "Script took $hours hour(s) to execute"
+
+echo "Copying log files and best checkpoint(s) back to GPFS..."
+jsrun -n 1 cp /mnt/bb/$USER/tb_log/* /gpfs/alpine/scratch/$USER/$PROJID/Repositories/Personal_Repositories/deep-learning-hpc-project-template/project/tb_log
+jsrun -n 1 cp /mnt/bb/$USER/checkpoints/* /gpfs/alpine/scratch/$USER/$PROJID/Repositories/Personal_Repositories/deep-learning-hpc-project-template/project/checkpoints
+echo "Done copying log files and best checkpoint(s) back to GPFS"
