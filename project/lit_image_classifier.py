@@ -111,6 +111,7 @@ def cli_main():
     parser.add_argument('--num_epochs', type=int, default=25, help='Maximum number of epochs to run for training')
     parser.add_argument('--batch_size', default=16384, type=int, help='Number of samples included in each data batch')
     parser.add_argument('--hidden_dim', type=int, default=128, help='Number of hidden units in each hidden layer')
+    parser.add_argument('--root', type=str, default='', help='Root directory for dataset')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--experiment_name', type=str, default=None, help='Logger experiment name')
     parser.add_argument('--project_name', type=str, default='DLHPT', help='Logger project name')
@@ -136,8 +137,8 @@ def cli_main():
     # ------------
     # data
     # ------------
-    dataset = MNIST('', train=True, download=True, transform=transforms.ToTensor())
-    mnist_test = MNIST('', train=False, download=True, transform=transforms.ToTensor())
+    dataset = MNIST(args.root, train=True, download=True, transform=transforms.ToTensor())
+    mnist_test = MNIST(args.root, train=False, download=True, transform=transforms.ToTensor())
     mnist_train, mnist_val = random_split(dataset, [55000, 5000])
 
     train_loader = DataLoader(mnist_train, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)

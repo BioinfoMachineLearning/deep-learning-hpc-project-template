@@ -42,7 +42,7 @@ START=$(date +%s) # Capture script start time in seconds since Unix epoch
 echo "Script started at $(date)"
 
 # Execute script
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28 --tb_log_dir /mnt/bb/$USER/tb_log --ckpt_dir /mnt/bb/$USER/checkpoints
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28 --root /mnt/bb/$USER --tb_log_dir /mnt/bb/$USER/tb_log --ckpt_dir /mnt/bb/$USER/checkpoints
 
 END=$(date +%s) # Capture script end time in seconds since Unix epoch
 echo "Script finished at $(date)"
