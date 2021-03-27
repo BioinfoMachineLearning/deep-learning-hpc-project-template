@@ -56,6 +56,7 @@ echo "Script took $seconds second(s) to execute"
 echo "Script took $minutes minute(s) to execute"
 echo "Script took $hours hour(s) to execute"
 
+# Copying leftover items from NVMe drive back to GPFS
 echo "Copying log files and best checkpoint(s) back to GPFS..."
 jsrun -n 1 cp /mnt/bb/$USER/tb_log/* /gpfs/alpine/scratch/$USER/$PROJID/Repositories/Personal_Repositories/deep-learning-hpc-project-template/project/tb_log
 jsrun -n 1 cp /mnt/bb/$USER/checkpoints/* /gpfs/alpine/scratch/$USER/$PROJID/Repositories/Personal_Repositories/deep-learning-hpc-project-template/project/checkpoints
