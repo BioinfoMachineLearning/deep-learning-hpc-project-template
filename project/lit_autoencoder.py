@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import torch
-import wandb
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 from torch import nn
@@ -128,8 +127,8 @@ def cli_main():
         else args.experiment_name
 
     # Log everything to Weights and Biases (WandB)
-    run = wandb.init(name=args.experiment_name, project=args.project_name, entity=args.entity, reinit=True)
-    logger = WandbLogger(name=args.experiment_name, project=args.project_name, entity=args.entity, offline=args.offline)
+    logger = WandbLogger(name=args.experiment_name, project=args.project_name,
+                         entity=args.entity, offline=args.offline, log_model=True)
 
     # Assign specified logger (e.g. WandB) to Trainer instance
     trainer.logger = logger
@@ -161,12 +160,6 @@ def cli_main():
     # testing
     # ------------
     trainer.test(test_dataloaders=test_loader)
-
-    # ------------
-    # finalizing
-    # ------------
-    run.save(checkpoint_callback.best_model_path)
-    run.finish()
 
 
 if __name__ == '__main__':
