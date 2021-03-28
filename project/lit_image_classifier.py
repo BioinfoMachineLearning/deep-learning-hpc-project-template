@@ -49,7 +49,7 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('train_auroc', self.train_auroc(y_hat, y))
+        self.log('train_auroc', self.train_auroc(y_hat, y), sync_dist=True)
         return loss
 
     def training_epoch_end(self, outputs):
@@ -59,7 +59,7 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('val_auroc', self.val_auroc(y_hat, y))
+        self.log('val_auroc', self.val_auroc(y_hat, y), sync_dist=True)
         return loss
 
     def validation_epoch_end(self, outputs):
@@ -69,7 +69,7 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log('test_auroc', self.test_auroc(y_hat, y))
+        self.log('test_auroc', self.test_auroc(y_hat, y), sync_dist=True)
         return loss
 
     def test_epoch_end(self, outputs):
@@ -137,8 +137,8 @@ def cli_main():
     # ------------
     # data
     # ------------
-    dataset = MNIST(args.root, train=True, download=True, transform=transforms.ToTensor())
-    mnist_test = MNIST(args.root, train=False, download=True, transform=transforms.ToTensor())
+    dataset = MNIST(args.root, train=True, download=False, transform=transforms.ToTensor())
+    mnist_test = MNIST(args.root, train=False, download=False, transform=transforms.ToTensor())
     mnist_train, mnist_val = random_split(dataset, [55000, 5000])
 
     train_loader = DataLoader(mnist_train, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)

@@ -45,7 +45,7 @@ class LitAutoEncoder(pl.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = self.mse(x_hat, x)
-        self.log('train_mse', loss)
+        self.log('train_mse', loss, sync_dist=True)
         return loss
 
     def training_epoch_end(self, outputs):
@@ -106,8 +106,8 @@ def cli_main():
     # ------------
     # data
     # ------------
-    dataset = MNIST(args.root, train=True, download=True, transform=transforms.ToTensor())
-    mnist_test = MNIST(args.root, train=False, download=True, transform=transforms.ToTensor())
+    dataset = MNIST(args.root, train=True, download=False, transform=transforms.ToTensor())
+    mnist_test = MNIST(args.root, train=False, download=False, transform=transforms.ToTensor())
     mnist_train, mnist_val = random_split(dataset, [55000, 5000])
 
     train_loader = DataLoader(mnist_train, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)
