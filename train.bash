@@ -16,7 +16,7 @@ export PROJDIR="$PWD"
 
 # Remote Conda environment
 module load open-ce/1.1.3-py38-0
-conda activate "$PROJDIR"/venv
+conda activate DLHPT
 
 # Configure OMP for PyTorch
 export OMP_PLACES=threads
