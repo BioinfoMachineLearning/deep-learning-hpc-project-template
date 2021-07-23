@@ -38,9 +38,9 @@ class LitClassifier(pl.LightningModule):
         self.loss_fn = nn.CrossEntropyLoss()
 
         # Define cross-validation metrics
-        self.train_acc = pl.metrics.Accuracy(average='weighted', num_classes=10)
-        self.val_acc = pl.metrics.Accuracy(average='weighted', num_classes=10)
-        self.test_acc = pl.metrics.Accuracy(average='weighted', num_classes=10)
+        self.train_acc = pl.metrics.Accuracy()
+        self.val_acc = pl.metrics.Accuracy()
+        self.test_acc = pl.metrics.Accuracy()
 
     def forward(self, x):
         # use forward for inference/predictions
