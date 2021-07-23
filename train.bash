@@ -29,6 +29,10 @@ export https_proxy=https://proxy.ccs.ornl.gov:3128/
 export no_proxy='localhost,127.0.0.0/8,.ccs.ornl.gov,.ncrc.gov'
 export LC_ALL=en_US.utf8
 
+# Set NCCL settings for multi-node DDP
+export NCCL_NSOCKS_PERTHREAD=4
+export NCCL_SOCKET_NTHREADS=2
+
 # Run training script
 cd "$PROJDIR"/project || exit
 

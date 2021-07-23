@@ -127,7 +127,7 @@ def cli_main():
     # plugins
     # ------------
     trainer.plugins = [
-        'deepspeed_stage_2'
+        # 'deepspeed_stage_2'
     ]
 
     # ------------
