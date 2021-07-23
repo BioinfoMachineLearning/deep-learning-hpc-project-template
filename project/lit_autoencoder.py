@@ -1,6 +1,7 @@
 import os
 import pytorch_lightning as pl
 import torch
+import torchmetrics as tm
 from argparse import ArgumentParser
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -8,7 +9,6 @@ from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-from torchmetrics import MeanSquaredError
 from torchvision import transforms
 from torchvision.datasets.mnist import MNIST
 
@@ -30,7 +30,7 @@ class LitAutoEncoder(pl.LightningModule):
             nn.Linear(64, 28 * 28)
         )
 
-        self.train_mse = MeanSquaredError()
+        self.train_mse = tm.MeanSquaredError()
 
     def forward(self, x):
         # In lightning, forward defines the prediction/inference actions

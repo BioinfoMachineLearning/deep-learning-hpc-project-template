@@ -9,6 +9,7 @@ from torch.nn import functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
+import torchmetrics as tm
 from torchvision.datasets.mnist import MNIST
 
 
