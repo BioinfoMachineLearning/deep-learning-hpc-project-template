@@ -190,6 +190,13 @@ def cli_main():
     trainer.logger = logger
 
     # ------------
+    # plugins
+    # ------------
+    trainer.plugins = [
+        'deepspeed_stage_2'
+    ]
+
+    # ------------
     # checkpoint
     # ------------
     # Resume from checkpoint if path to a valid one is provided
