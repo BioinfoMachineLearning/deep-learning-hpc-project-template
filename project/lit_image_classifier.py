@@ -9,7 +9,6 @@ from torch.nn import functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
-import torchmetrics as tm
 from torchvision.datasets.mnist import MNIST
 
 
@@ -39,21 +38,9 @@ class LitClassifier(pl.LightningModule):
         self.loss_fn = nn.CrossEntropyLoss()
 
         # Define cross-validation metrics
-        self.train_acc = tm.Accuracy(average='weighted', num_classes=10)
-        self.val_acc = tm.Accuracy(average='weighted', num_classes=10)
-        self.test_acc = tm.Accuracy(average='weighted', num_classes=10)
-
-        self.train_auroc = tm.AUROC(average='weighted')
-        self.val_auroc = tm.AUROC(average='weighted')
-        self.test_auroc = tm.AUROC(average='weighted')
-
-        self.train_auprc = tm.AveragePrecision()
-        self.val_auprc = tm.AveragePrecision()
-        self.test_auprc = tm.AveragePrecision()
-
-        self.train_f1 = tm.F1(average='weighted', num_classes=10)
-        self.val_f1 = tm.F1(average='weighted', num_classes=10)
-        self.test_f1 = tm.F1(average='weighted', num_classes=10)
+        self.train_acc = pl.metrics.Accuracy(average='weighted', num_classes=10)
+        self.val_acc = pl.metrics.Accuracy(average='weighted', num_classes=10)
+        self.test_acc = pl.metrics.Accuracy(average='weighted', num_classes=10)
 
     def forward(self, x):
         # use forward for inference/predictions
@@ -65,48 +52,30 @@ class LitClassifier(pl.LightningModule):
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
         self.log('train_acc', self.train_acc(y_hat, y), sync_dist=True)
-        self.log('train_auroc', self.train_auroc(y_hat, y), sync_dist=True)
-        self.log('train_auprc', self.train_auprc(y_hat, y), sync_dist=True)
-        self.log('train_f1', self.train_f1(y_hat, y), sync_dist=True)
         return loss
 
     def training_epoch_end(self, outputs):
         self.train_acc.reset()
-        self.train_auroc.reset()
-        self.train_auprc.reset()
-        self.train_f1.reset()
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
         self.log('val_acc', self.train_acc(y_hat, y), sync_dist=True)
-        self.log('val_auroc', self.train_auroc(y_hat, y), sync_dist=True)
-        self.log('val_auprc', self.train_auprc(y_hat, y), sync_dist=True)
-        self.log('val_f1', self.train_f1(y_hat, y), sync_dist=True)
         return loss
 
     def validation_epoch_end(self, outputs):
         self.val_acc.reset()
-        self.val_auroc.reset()
-        self.val_auprc.reset()
-        self.val_f1.reset()
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
         self.log('test_acc', self.train_acc(y_hat, y), sync_dist=True)
-        self.log('test_auroc', self.train_auroc(y_hat, y), sync_dist=True)
-        self.log('test_auprc', self.train_auprc(y_hat, y), sync_dist=True)
-        self.log('test_f1', self.train_f1(y_hat, y), sync_dist=True)
         return loss
 
     def test_epoch_end(self, outputs):
         self.test_acc.reset()
-        self.test_auroc.reset()
-        self.test_auprc.reset()
-        self.test_f1.reset()
 
     # ---------------------
     # training setup
@@ -115,7 +84,7 @@ class LitClassifier(pl.LightningModule):
         # self.hparams available because we called self.save_hyperparameters()
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
         scheduler = CosineAnnealingLR(optimizer, self.hparams.num_epochs)
-        metric_to_track = 'val_auroc'
+        metric_to_track = 'val_acc'
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
@@ -202,7 +171,7 @@ def cli_main():
     # Resume from checkpoint if path to a valid one is provided
     args.ckpt_name = args.ckpt_name \
         if args.ckpt_name is not None \
-        else 'LitClassifier-{epoch:02d}-{val_auroc:.2f}.ckpt'
+        else 'LitClassifier-{epoch:02d}-{val_acc:.2f}.ckpt'
     checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name)
     trainer.resume_from_checkpoint = checkpoint_path if os.path.exists(checkpoint_path) else None
 
@@ -210,9 +179,9 @@ def cli_main():
     # training
     # ------------
     # Create and use callbacks
-    early_stop_callback = EarlyStopping(monitor='val_auroc', mode='min', min_delta=0.00, patience=3)
-    checkpoint_callback = ModelCheckpoint(monitor='val_auroc', save_top_k=3, dirpath=args.ckpt_dir,
-                                          filename='LitClassifier-{epoch:02d}-{val_auroc:.2f}')
+    early_stop_callback = EarlyStopping(monitor='val_acc', mode='max', min_delta=0.01, patience=3)
+    checkpoint_callback = ModelCheckpoint(monitor='val_acc', save_top_k=3, dirpath=args.ckpt_dir,
+                                          filename='LitClassifier-{epoch:02d}-{val_acc:.2f}')
     lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
     trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
 
