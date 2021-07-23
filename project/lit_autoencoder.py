@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
-from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.loggers import TensorBoardLogger
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
@@ -81,20 +81,10 @@ def cli_main():
     parser.add_argument('--hidden_dim', type=int, default=128, help='Number of hidden units in each hidden layer')
     parser.add_argument('--root', type=str, default='', help='Root directory for dataset')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
+    parser.add_argument('--log_dir', type=str, default='tb_logs', help='Logger log directory')
     parser.add_argument('--experiment_name', type=str, default=None, help='Logger experiment name')
-    parser.add_argument('--project_name', type=str, default='DLHPT', help='Logger project name')
-    parser.add_argument('--entity', type=str, default='bml-lab', help='Logger entity (i.e. team) name')
-    parser.add_argument('--offline', action='store_true', dest='offline', help='Whether to log locally or remotely')
-    parser.add_argument('--online', action='store_false', dest='offline', help='Whether to log locally or remotely')
-    parser.add_argument('--close_after_fit', action='store_true', dest='close_after_fit',
-                        help='Whether to stop logger after calling fit')
-    parser.add_argument('--open_after_fit', action='store_false', dest='close_after_fit',
-                        help='Whether to stop logger after calling fit')
-    parser.add_argument('--tb_log_dir', type=str, default='tb_log', help='Where to store TensorBoard log files')
     parser.add_argument('--ckpt_dir', type=str, default='checkpoints', help='Directory in which to save checkpoints')
     parser.add_argument('--ckpt_name', type=str, default=None, help='Filename of best checkpoint')
-    parser.set_defaults(offline=False)  # Default to using online logging mode
-    parser.set_defaults(close_after_fit=False)  # Default to keeping logger open after calling fit()
     args = parser.parse_args()
 
     # Set HPC-specific parameter values
@@ -126,11 +116,10 @@ def cli_main():
         if not args.experiment_name \
         else args.experiment_name
 
-    # Log everything to Weights and Biases (WandB)
-    logger = WandbLogger(name=args.experiment_name, project=args.project_name,
-                         entity=args.entity, offline=args.offline, log_model=True)
+    # Log everything to TensorBoard
+    logger = TensorBoardLogger(save_dir=args.log_dir, name=args.experiment_name)
 
-    # Assign specified logger (e.g. WandB) to Trainer instance
+    # Assign specified logger (e.g. TensorBoard) to Trainer instance
     trainer.logger = logger
 
     # ------------
