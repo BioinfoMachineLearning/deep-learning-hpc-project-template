@@ -1,12 +1,11 @@
 import os
-from argparse import ArgumentParser
-
 import pytorch_lightning as pl
 import torch
+from argparse import ArgumentParser
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch import nn
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from torchmetrics import MeanSquaredError
@@ -31,10 +30,10 @@ class LitAutoEncoder(pl.LightningModule):
             nn.Linear(64, 28 * 28)
         )
 
-        self.mse = MeanSquaredError()
+        self.train_mse = MeanSquaredError()
 
     def forward(self, x):
-        # in lightning, forward defines the prediction/inference actions
+        # In lightning, forward defines the prediction/inference actions
         embedding = self.encoder(x)
         return embedding
 
@@ -43,19 +42,19 @@ class LitAutoEncoder(pl.LightningModule):
         x = x.view(x.size(0), -1)
         z = self.encoder(x)
         x_hat = self.decoder(z)
-        loss = self.mse(x_hat, x)
+        loss = self.train_mse(x_hat, x)
         self.log('train_mse', loss, sync_dist=True)
         return loss
 
     def training_epoch_end(self, outputs):
-        self.mse.reset()
+        self.train_mse.reset()
 
     # ---------------------
     # training setup
     # ---------------------
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
-        scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
+        scheduler = CosineAnnealingLR(optimizer, self.hparams.num_epochs)
         metric_to_track = 'train_mse'
         return {
             'optimizer': optimizer,

@@ -1,10 +1,10 @@
-name: project
+name: DLHPT
 channels:
   - defaults
   - conda-forge
   - pytorch
 dependencies:
-  - python
+  - python=3.8
   - anaconda
   - pytorch
   - torchvision

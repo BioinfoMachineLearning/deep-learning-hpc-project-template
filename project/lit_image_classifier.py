@@ -1,12 +1,12 @@
 import os
-from argparse import ArgumentParser
-
 import pytorch_lightning as pl
 import torch
+import torch.nn as nn
+from argparse import ArgumentParser
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.nn import functional as F
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, random_split
 from torchmetrics import AUROC
 from torchvision import transforms
@@ -16,9 +16,9 @@ from torchvision.datasets.mnist import MNIST
 class Backbone(torch.nn.Module):
     def __init__(self, hidden_dim=128):
         super().__init__()
-        self.l1 = torch.nn.Linear(28 * 28, hidden_dim)
-        self.l2 = torch.nn.Linear(hidden_dim, hidden_dim * 2)
-        self.l3 = torch.nn.Linear(hidden_dim * 2, 10)
+        self.l1 = nn.Linear(28 * 28, hidden_dim)
+        self.l2 = nn.Linear(hidden_dim, hidden_dim * 2)
+        self.l3 = nn.Linear(hidden_dim * 2, 10)
 
     def forward(self, x):
         x = x.view(x.size(0), -1)
@@ -35,9 +35,25 @@ class LitClassifier(pl.LightningModule):
         self.save_hyperparameters()
         self.backbone = backbone
 
-        self.train_auroc = AUROC(num_classes=10)
-        self.val_auroc = AUROC(num_classes=10)
-        self.test_auroc = AUROC(num_classes=10)
+        # Declare loss function
+        self.loss_fn = nn.CrossEntropyLoss()
+
+        # Define cross-validation metrics
+        self.train_acc = tm.Accuracy(average='weighted', num_classes=10)
+        self.val_acc = tm.Accuracy(average='weighted', num_classes=10)
+        self.test_acc = tm.Accuracy(average='weighted', num_classes=10)
+
+        self.train_auroc = tm.AUROC(average='weighted')
+        self.val_auroc = tm.AUROC(average='weighted')
+        self.test_auroc = tm.AUROC(average='weighted')
+
+        self.train_auprc = tm.AveragePrecision()
+        self.val_auprc = tm.AveragePrecision()
+        self.test_auprc = tm.AveragePrecision()
+
+        self.train_f1 = tm.F1(average='weighted', num_classes=10)
+        self.val_f1 = tm.F1(average='weighted', num_classes=10)
+        self.test_f1 = tm.F1(average='weighted', num_classes=10)
 
     def forward(self, x):
         # use forward for inference/predictions
@@ -46,33 +62,51 @@ class LitClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.backbone(x)
-        loss = F.cross_entropy(y_hat, y)
+        y_hat = self(x)
+        loss = self.loss_fn(y_hat, y)
+        self.log('train_acc', self.train_acc(y_hat, y), sync_dist=True)
         self.log('train_auroc', self.train_auroc(y_hat, y), sync_dist=True)
+        self.log('train_auprc', self.train_auprc(y_hat, y), sync_dist=True)
+        self.log('train_f1', self.train_f1(y_hat, y), sync_dist=True)
         return loss
 
     def training_epoch_end(self, outputs):
+        self.train_acc.reset()
         self.train_auroc.reset()
+        self.train_auprc.reset()
+        self.train_f1.reset()
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.backbone(x)
-        loss = F.cross_entropy(y_hat, y)
-        self.log('val_auroc', self.val_auroc(y_hat, y), sync_dist=True)
+        y_hat = self(x)
+        loss = self.loss_fn(y_hat, y)
+        self.log('val_acc', self.train_acc(y_hat, y), sync_dist=True)
+        self.log('val_auroc', self.train_auroc(y_hat, y), sync_dist=True)
+        self.log('val_auprc', self.train_auprc(y_hat, y), sync_dist=True)
+        self.log('val_f1', self.train_f1(y_hat, y), sync_dist=True)
         return loss
 
     def validation_epoch_end(self, outputs):
+        self.val_acc.reset()
         self.val_auroc.reset()
+        self.val_auprc.reset()
+        self.val_f1.reset()
 
     def test_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.backbone(x)
-        loss = F.cross_entropy(y_hat, y)
-        self.log('test_auroc', self.test_auroc(y_hat, y), sync_dist=True)
+        y_hat = self(x)
+        loss = self.loss_fn(y_hat, y)
+        self.log('test_acc', self.train_acc(y_hat, y), sync_dist=True)
+        self.log('test_auroc', self.train_auroc(y_hat, y), sync_dist=True)
+        self.log('test_auprc', self.train_auprc(y_hat, y), sync_dist=True)
+        self.log('test_f1', self.train_f1(y_hat, y), sync_dist=True)
         return loss
 
     def test_epoch_end(self, outputs):
+        self.test_acc.reset()
         self.test_auroc.reset()
+        self.test_auprc.reset()
+        self.test_f1.reset()
 
     # ---------------------
     # training setup
@@ -80,7 +114,7 @@ class LitClassifier(pl.LightningModule):
     def configure_optimizers(self):
         # self.hparams available because we called self.save_hyperparameters()
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
-        scheduler = CosineAnnealingWarmRestarts(optimizer, self.hparams.num_epochs, eta_min=1e-4)
+        scheduler = CosineAnnealingLR(optimizer, self.hparams.num_epochs)
         metric_to_track = 'val_auroc'
         return {
             'optimizer': optimizer,
