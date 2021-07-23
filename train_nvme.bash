@@ -18,11 +18,12 @@ export DATASET=MNIST
 export PROJDIR=$MEMBERWORK/$PROJID/Repositories/Personal_Repositories/deep-learning-hpc-project-template
 export DGLBACKEND=pytorch # Required to override default ~/.dgl config directory which is read-only
 
+# Remote Conda environment
+module load open-ce/1.1.3-py38-0
+conda activate "$PROJDIR"/venv
+
 # Configure OMP for PyTorch
 export OMP_PLACES=threads
-
-# Remote Conda environment
-conda activate "$PROJDIR"/venv
 
 # Run training script
 cd "$PROJDIR"/project || exit
