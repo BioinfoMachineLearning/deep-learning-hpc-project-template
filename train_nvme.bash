@@ -26,11 +26,11 @@ cd "$PROJDIR"/project || exit
 
 # Execute script
 date
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28 --tb_log_dir /mnt/bb/"$USER"/tb_log --ckpt_dir /mnt/bb/"$USER"/checkpoints
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_gpus 6 --num_compute_nodes 2 --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28 --tb_log_dir /mnt/bb/"$USER"/tb_logs --ckpt_dir /mnt/bb/"$USER"/checkpoints
 date
 
 # Copying leftover items from NVMe drive back to GPFS
 echo "Copying log files and best checkpoint(s) back to GPFS..."
-jsrun -n 1 cp -r /mnt/bb/"$USER"/tb_log "$PROJDIR"/project/tb_log
+jsrun -n 1 cp -r /mnt/bb/"$USER"/tb_logs "$PROJDIR"/project/tb_logs
 jsrun -n 1 cp -r /mnt/bb/"$USER"/checkpoints "$PROJDIR"/project/checkpoints
 echo "Done copying log files and best checkpoint(s) back to GPFS"

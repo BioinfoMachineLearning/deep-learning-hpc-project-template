@@ -73,6 +73,7 @@ def cli_main():
     parser = pl.Trainer.add_argparse_args(parser)
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help='Backend to use for multi-GPU training')
     parser.add_argument('--num_gpus', type=int, default=-1, help='Number of GPUs to use (e.g. -1 = all available GPUs)')
+    parser.add_argument('--num_compute_nodes', type=int, default=2, help='Number of compute nodes to use')
     parser.add_argument('--profiler_method', type=str, default='simple', help='PyTorch Lightning profiler to use')
     parser.add_argument('--num_epochs', type=int, default=25, help='Maximum number of epochs to run for training')
     parser.add_argument('--batch_size', default=16384, type=int, help='Number of samples included in each data batch')
@@ -89,6 +90,7 @@ def cli_main():
     # Set HPC-specific parameter values
     args.accelerator = args.multi_gpu_backend
     args.gpus = args.num_gpus
+    args.num_nodes = args.num_compute_nodes
     args.profiler = args.profiler_method
 
     # ------------
