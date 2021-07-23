@@ -12,10 +12,7 @@
 ###############################################################
 
 # Remote project path
-export USER=acmwhb
-export PROJID=bip198
-export PROJDIR=$MEMBERWORK/$PROJID/Repositories/Personal_Repositories/deep-learning-hpc-project-template
-export DGLBACKEND=pytorch # Required to override default ~/.dgl config directory which is read-only
+export PROJDIR="$PWD"
 
 # Remote Conda environment
 module load open-ce/1.1.3-py38-0
