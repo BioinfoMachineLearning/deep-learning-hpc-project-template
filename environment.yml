@@ -5,11 +5,11 @@ channels:
   - pytorch
 dependencies:
   - python=3.8
-  - anaconda
-  - pytorch
-  - torchvision
-  - torchaudio
   - pip
+  # After creating initial Conda environment, uncomment and run the following if not already installed on your machine
+  #  - pytorch  # Install with 'conda install pytorch -c pytorch -c conda-forge' - already installed on Summit as 1.7.1
+  - torchvision=0.10.0
+  - torchaudio=0.9.0
   - pip:
       - -e .
       - -r file:requirements.txt

@@ -137,7 +137,7 @@ DeepInteract
 project/DeepInteract
 
 # TensorBoard
-tb_log
+tb_logs
 
 # Checkpoints
 checkpoints
