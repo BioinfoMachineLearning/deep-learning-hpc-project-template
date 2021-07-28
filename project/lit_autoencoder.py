@@ -79,7 +79,7 @@ def cli_main():
     parser.add_argument('--num_gpus', type=int, default=1, help='Number of GPUs to use (e.g. -1 = all available GPUs)')
     parser.add_argument('--num_compute_nodes', type=int, default=1, help='Number of compute nodes to use')
     parser.add_argument('--gpu_precision', type=int, default=32, help='Bit size used during training (e.g. 16-bit)')
-    parser.add_argument('--profiler_method', type=str, default='', help='PyTorch Lightning profiler to use')
+    parser.add_argument('--profiler_method', type=str, default=None, help='PyTorch Lightning profiler to use')
     parser.add_argument('--num_epochs', type=int, default=50, help='Maximum number of epochs to run for training')
     parser.add_argument('--batch_size', default=64, type=int, help='Number of samples included in each data batch')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
