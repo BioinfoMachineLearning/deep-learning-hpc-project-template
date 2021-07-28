@@ -38,7 +38,7 @@ cd "$PROJDIR"/project || exit
 
 # Execute script
 date
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_gpus 6 --num_compute_nodes 2 --num_epochs 25 --batch_size 16384 --hidden_dim 128 --num_dataloader_workers 28 --tb_log_dir /mnt/bb/"$USER"/tb_logs --ckpt_dir /mnt/bb/"$USER"/checkpoints
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --num_gpus 6 --num_compute_nodes 2 --num_epochs 50 --batch_size 64 --hidden_dim 512 --lr 1e-4 --num_dataloader_workers 28 --tb_log_dir /mnt/bb/"$USER"/tb_logs --ckpt_dir /mnt/bb/"$USER"/checkpoints
 date
 
 # Copying leftover items from NVMe drive back to GPFS

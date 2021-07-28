@@ -105,7 +105,7 @@ class LitClassifier(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--hidden_dim', type=int, default=128)
+        parser.add_argument('--hidden_dim', type=int, default=512)
         parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
         return parser
 
@@ -127,7 +127,7 @@ def cli_main():
     parser.add_argument('--gpu_precision', type=int, default=32, help='Bit size used during training (e.g. 16-bit)')
     parser.add_argument('--profiler_method', type=str, default='simple', help='PyTorch Lightning profiler to use')
     parser.add_argument('--num_epochs', type=int, default=50, help='Maximum number of epochs to run for training')
-    parser.add_argument('--batch_size', default=1024, type=int, help='Number of samples included in each data batch')
+    parser.add_argument('--batch_size', default=64, type=int, help='Number of samples included in each data batch')
     parser.add_argument('--root', type=str, default='', help='Root directory for dataset')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--log_dir', type=str, default='tb_logs', help='Logger log directory')
