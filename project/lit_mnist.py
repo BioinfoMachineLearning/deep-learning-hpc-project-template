@@ -1,4 +1,5 @@
 import os
+import time
 from argparse import ArgumentParser
 
 import pytorch_lightning as pl
@@ -6,12 +7,13 @@ import torch
 import torch.nn as nn
 import torchmetrics as tm
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
-from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.plugins import DDPPlugin
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets.mnist import MNIST
+
+from project.utils import construct_pl_logger
 
 
 class LitClassifier(pl.LightningModule):
@@ -114,7 +116,7 @@ def cli_main():
     pl.seed_everything(42)
 
     # ------------
-    # args
+    # Args
     # ------------
     parser = ArgumentParser()
     parser = pl.Trainer.add_argparse_args(parser)
@@ -131,7 +133,13 @@ def cli_main():
     parser.add_argument('--root', type=str, default='', help='Root directory for dataset')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--log_dir', type=str, default='tb_logs', help='Logger log directory')
+    parser.add_argument('--logger_name', type=str, default='WandB', help='Which logger to use for experiments')
     parser.add_argument('--experiment_name', type=str, default=None, help='Logger experiment name')
+    parser.add_argument('--project_name', type=str, default='DLHPT', help='Logger project name')
+    parser.add_argument('--entity', type=str, default='bml-lab', help='Logger entity (i.e. team) name')
+    parser.add_argument('--run_id', type=str, default='', help='Logger run ID')
+    parser.add_argument('--offline', action='store_true', dest='offline', help='Whether to log locally or remotely')
+    parser.add_argument('--online', action='store_false', dest='offline', help='Whether to log locally or remotely')
     parser.add_argument('--ckpt_dir', type=str, default='checkpoints', help='Directory in which to save checkpoints')
     parser.add_argument('--ckpt_name', type=str, default=None, help='Filename of best checkpoint')
     parser.add_argument('--grad_clip_val', type=float, default=0.5, help='Norm over which to clip gradients')
@@ -140,6 +148,7 @@ def cli_main():
     parser.add_argument('--min_delta', type=float, default=0.01, help='Minimum percentage of change required to'
                                                                       ' "metric_to_track" before early stopping'
                                                                       ' after surpassing patience')
+    parser.set_defaults(offline=False)  # Default to using online logging mode
     parser.set_defaults(stc_weight_avg=True)  # Default to using stochastic weight averaging to smooth loss landscape
     args = parser.parse_args()
 
@@ -164,7 +173,7 @@ def cli_main():
     ]
 
     # ------------
-    # data
+    # Data
     # ------------
     dataset = MNIST(args.root, train=True, download=True, transform=transforms.ToTensor())
     mnist_test = MNIST(args.root, train=False, download=True, transform=transforms.ToTensor())
@@ -175,54 +184,80 @@ def cli_main():
     test_loader = DataLoader(mnist_test, batch_size=args.batch_size, num_workers=args.num_dataloader_workers)
 
     # ------------
-    # model
+    # Model
     # ------------
     model = LitClassifier(args.hidden_dim, args.num_epochs, args.lr)
+    args.experiment_name = f'LitClassifier-e{args.num_epochs}-b{args.batch_size}' \
+        if not args.experiment_name \
+        else args.experiment_name
+    template_ckpt_filename = 'LitClassifier-{epoch:02d}-{val_acc:.2f}'
 
     # ------------
-    # checkpoint
+    # Checkpoint
     # ------------
     ckpt_provided = args.ckpt_name is not None
     checkpoint_path = os.path.join(args.ckpt_dir, args.ckpt_name) if ckpt_provided else None
     args.resume_from_checkpoint = checkpoint_path
 
     # ------------
-    # trainer
+    # Trainer
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    # Initialize logger
-    args.experiment_name = f'LitClassifier-e{args.num_epochs}-b{args.batch_size}' \
-        if not args.experiment_name \
-        else args.experiment_name
-
-    # Log everything to TensorBoard
-    logger = TensorBoardLogger(save_dir=args.log_dir, name=args.experiment_name)
-
-    # Assign specified logger (e.g. TensorBoard) to Trainer instance
-    trainer.logger = logger
+    # ------------
+    # Logger
+    # ------------
+    pl_logger = construct_pl_logger(args)  # Log everything to an external logger
+    trainer.logger = pl_logger  # Assign specified logger (e.g. TensorBoardLogger) to Trainer instance
+    using_wandb_logger = args.logger_name.lower() == 'wandb'  # Determine whether the user requested to use WandB
 
     # ------------
-    # callbacks
+    # Callbacks
     # ------------
     # Create and use callbacks
     early_stop_callback = EarlyStopping(monitor='val_acc', mode='max', min_delta=args.min_delta, patience=5)
-    checkpoint_callback = ModelCheckpoint(monitor='val_acc', save_top_k=3, dirpath=args.ckpt_dir,
-                                          filename='LitClassifier-{epoch:02d}-{val_acc:.2f}')
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_acc',
+        save_top_k=3,
+        dirpath=args.ckpt_dir,
+        filename=template_ckpt_filename  # May cause a race condition when calling trainer.test() with many GPUs
+    )
     lr_callback = LearningRateMonitor(logging_interval='epoch')  # Use with a learning rate scheduler
     trainer.callbacks = [early_stop_callback, checkpoint_callback, lr_callback]
 
     # ------------
-    # training
+    # Restore
+    # ------------
+    # If using WandB, download checkpoint file from their servers if the checkpoint is not already stored locally
+    if using_wandb_logger and ckpt_provided and not os.path.exists(checkpoint_path):
+        # Download checkpoint from WandB
+        trainer.logger.experiment.restore(checkpoint_path, run_path=f'{args.entity}/{args.project_name}/{args.run_id}')
+
+    # ------------
+    # Training
     # ------------
     # Train with the provided model and data module
     trainer.fit(model, train_loader, val_loader)
 
     # ------------
-    # testing
+    # Testing
     # ------------
     trainer.test(dataloaders=test_loader)
 
 
 if __name__ == '__main__':
+    # -----------
+    # Start Time
+    # -----------
+    start_time = time.time()
+
+    # -----------
+    # Execution
+    # -----------
     cli_main()
+
+    # -----------
+    # End Time
+    # -----------
+    end_time = time.time()
+    print(f'\nTraining and testing together took {round((end_time - start_time) / 60, 2)} minutes.')
