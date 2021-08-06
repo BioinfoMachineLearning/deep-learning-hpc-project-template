@@ -165,7 +165,7 @@ def cli_main():
     # ------------
     pl_logger = construct_pl_logger(args)  # Log everything to an external logger
     trainer.logger = pl_logger  # Assign specified logger (e.g. TensorBoardLogger) to Trainer instance
-    using_wandb_logger = args.logger_name.lower() == 'wandb'  # Determine whether the user requested to use WandB
+    using_wandb_logger = args.logger_name.lower() == 'TensorBoard'  # Determine whether the user requested to use WandB
 
     # ------------
     # Callbacks

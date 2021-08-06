@@ -133,7 +133,7 @@ def cli_main():
     parser.add_argument('--root', type=str, default='', help='Root directory for dataset')
     parser.add_argument('--num_dataloader_workers', type=int, default=6, help='Number of CPU threads for loading data')
     parser.add_argument('--log_dir', type=str, default='tb_logs', help='Logger log directory')
-    parser.add_argument('--logger_name', type=str, default='WandB', help='Which logger to use for experiments')
+    parser.add_argument('--logger_name', type=str, default='TensorBoard', help='Which logger to use for experiments')
     parser.add_argument('--experiment_name', type=str, default=None, help='Logger experiment name')
     parser.add_argument('--project_name', type=str, default='DLHPT', help='Logger project name')
     parser.add_argument('--entity', type=str, default='bml-lab', help='Logger entity (i.e. team) name')

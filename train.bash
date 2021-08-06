@@ -18,9 +18,6 @@ export PROJDIR="$PWD"
 module load open-ce/1.1.3-py38-0
 conda activate DLHPT
 
-# Configure OMP for PyTorch
-export OMP_PLACES=threads
-
 # Configure proxy access on compute nodes
 export WANDB_INSECURE_DISABLE_SSL=true
 export all_proxy=socks://proxy.ccs.ornl.gov:3128/
@@ -30,14 +27,10 @@ export https_proxy=http://proxy.ccs.ornl.gov:3128/
 export no_proxy='localhost,127.0.0.0/8,.ccs.ornl.gov,.ncrc.gov'
 export LC_ALL=en_US.utf8
 
-# Set NCCL settings for multi-node DDP
-export NCCL_NSOCKS_PERTHREAD=4
-export NCCL_SOCKET_NTHREADS=2
-
 # Run training script
 cd "$PROJDIR"/project || exit
 
 # Execute script
 date
-jsrun -bpacked:7 -g12 -a6 -c42 -r1 python lit_image_classifier.py --num_gpus 6 --num_compute_nodes 2 --num_epochs 50 --batch_size 64 --hidden_dim 512 --lr 1e-4 --num_dataloader_workers 28
+jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --logger_name TensorBoard --num_gpus 6 --num_compute_nodes 2 --num_epochs 50 --batch_size 64 --hidden_dim 512 --lr 1e-4 --num_dataloader_workers 28
 date
