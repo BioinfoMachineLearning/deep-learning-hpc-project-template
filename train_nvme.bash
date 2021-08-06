@@ -22,6 +22,7 @@ conda activate DLHPT
 export OMP_PLACES=threads
 
 # Configure proxy access on compute nodes
+export WANDB_INSECURE_DISABLE_SSL=true
 export all_proxy=socks://proxy.ccs.ornl.gov:3128/
 export ftp_proxy=ftp://proxy.ccs.ornl.gov:3128/
 export http_proxy=http://proxy.ccs.ornl.gov:3128/
