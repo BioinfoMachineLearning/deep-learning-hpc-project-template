@@ -3,10 +3,9 @@
 ####################### BSUB Headers #########################
 #BSUB -J train_lit_image_classifier_model_with_pl
 #BSUB -P bif132
-#BSUB -W 0:10
-#BSUB -nnodes 2
+#BSUB -W 0:15
+#BSUB -nnodes 32
 #BSUB -q batch
-#BSUB -alloc_flags "gpumps NVME"
 #BSUB -o job%J.out
 #BSUB -e job%J.out
 ###############################################################
@@ -32,7 +31,7 @@ cd "$PROJDIR"/project || exit
 
 # Execute script
 date
-jsrun -bpacked:7 -g6 -a6 -c42 -r1 python lit_image_classifier.py --logger_name TensorBoard --num_gpus 6 --num_compute_nodes 2 --num_epochs 50 --batch_size 64 --hidden_dim 512 --lr 1e-4 --num_dataloader_workers 28 --log_dir /mnt/bb/"$USER"/tb_logs
+jsrun -g6 -a6 -c42 -r1 python3 lit_image_classifier.py --logger_name WandB --num_gpus 6 --num_compute_nodes 32 --num_epochs 50 --batch_size 64 --hidden_dim 512 --lr 1e-4 --num_dataloader_workers 28 --log_dir /mnt/bb/"$USER"/tb_logs
 date
 
 # Copying leftover items from NVMe drive back to GPFS
