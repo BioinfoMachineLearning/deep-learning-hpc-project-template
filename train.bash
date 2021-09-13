@@ -6,6 +6,7 @@
 #BSUB -W 0:15
 #BSUB -nnodes 32
 #BSUB -q batch
+#BSUB -alloc_flags "gpumps"
 #BSUB -o job%J.out
 #BSUB -e job%J.out
 ###############################################################
