@@ -53,13 +53,13 @@ git clone https://github.com/YourGithubName/deep-learning-hpc-project-template
 cd deep-learning-hpc-project-template
 
 # (If on HPC cluster) Load 'open-ce' module
-module load open-ce/1.1.3-py38-0
+module load open-ce/1.2.0-py38-0
 
 # (If on HPC cluster) Clone Conda environment into this directory using provided 'open-ce' environment:
-conda create --name DLHPT --clone open-ce-1.1.3-py38-0
+conda create --name DLHPT --clone open-ce-1.2.0-py38-0
 
 # (If on HPC cluster - Optional) Create Conda environment in a particular directory using provided 'open-ce' environment:
-conda create --prefix MY_VENV_DIR --clone open-ce-1.1.3-py38-0
+conda create --prefix MY_VENV_DIR --clone open-ce-1.2.0-py38-0
 
 # (Else, if on local machine) Set up Conda environment locally
 conda env create --name DLHPT -f environment.yml

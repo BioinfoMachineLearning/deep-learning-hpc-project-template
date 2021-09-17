@@ -12,5 +12,5 @@ dependencies:
   - torchaudio=0.9.0
   - pip:
       - -e .
-      - -r file:requirements.txt
+#      - -r file:requirements.txt
       - -r file:tests/requirements.txt

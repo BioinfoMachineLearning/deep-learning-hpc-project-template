@@ -1,2 +1,2 @@
-pytorch-lightning==1.4.5
-wandb==0.12.1
+pytorch-lightning==1.4.6
+wandb==0.12.2
