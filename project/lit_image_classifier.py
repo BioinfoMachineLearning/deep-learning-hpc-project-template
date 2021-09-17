@@ -5,8 +5,8 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import torchmetrics as tm
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
+from pytorch_lightning.metrics import Accuracy
 from pytorch_lightning.plugins import DDPPlugin
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, random_split
@@ -42,9 +42,9 @@ class LitClassifier(pl.LightningModule):
         self.loss_fn = nn.CrossEntropyLoss()
 
         # Define cross-validation metrics
-        self.train_acc = tm.Accuracy()
-        self.val_acc = tm.Accuracy()
-        self.test_acc = tm.Accuracy()
+        self.train_acc = Accuracy()
+        self.val_acc = Accuracy()
+        self.test_acc = Accuracy()
 
     def forward(self, x):
         # use forward for inference/predictions
