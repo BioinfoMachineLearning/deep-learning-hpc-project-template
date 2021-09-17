@@ -3,7 +3,7 @@
 ####################### BSUB Headers #########################
 #BSUB -J train_lit_image_classifier_model_with_pl
 #BSUB -P bif132
-#BSUB -W 0:15
+#BSUB -W 0:30
 #BSUB -nnodes 32
 #BSUB -q batch
 #BSUB -alloc_flags "gpumps"
@@ -11,12 +11,16 @@
 #BSUB -e job%J.out
 ###############################################################
 
+# Remote Conda environment
+module load open-ce/1.2.0-py38-0
+conda activate DLHPT
+
 # Remote project path
 export PROJDIR="$PWD"
 
-# Remote Conda environment
-module load open-ce/1.1.3-py38-0
-conda activate DLHPT
+# Set number of threads for OMP
+export OMP_PLACES=threads
+export OMP_NUM_THREADS=7
 
 # Configure proxy access on compute nodes
 export WANDB_INSECURE_DISABLE_SSL=true
