@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.metrics import Accuracy
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.plugins.ddp_plugin import DDPPlugin
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
